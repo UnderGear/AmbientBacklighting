@@ -1,0 +1,6 @@
+﻿  hid.c
+     Creating library Q:\Projects\C++\hidapi\windows\Release\hidapi.lib and object Q:\Projects\C++\hidapi\windows\Release\hidapi.exp
+  Generating code
+  All 23 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  hidapi.vcxproj -> Q:\Projects\C++\hidapi\windows\Release\hidapi.dll

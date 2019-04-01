@@ -1,0 +1,16 @@
+﻿  AmbientBackLighting.cpp
+q:\projects\c++\ambientbacklighting\ambientbacklightinglib\windowdata.h(10): warning C4251: 'WindowData::Title': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of struct 'WindowData'
+  c:\program files (x86)\microsoft visual studio\2017\professional\vc\tools\msvc\14.16.27023\include\xstring(4373): note: see declaration of 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>'
+q:\projects\c++\ambientbacklighting\ambientbacklightinglib\windowdata.h(23): warning C4251: 'WindowSelector::Windows': class 'std::vector<WindowData,std::allocator<_Ty>>' needs to have dll-interface to be used by clients of class 'WindowSelector'
+          with
+          [
+              _Ty=WindowData
+          ]
+  q:\projects\c++\ambientbacklighting\ambientbacklightinglib\windowdata.h(23): note: see declaration of 'std::vector<WindowData,std::allocator<_Ty>>'
+          with
+          [
+              _Ty=WindowData
+          ]
+  AmbientLightStrip.cpp
+  Generating Code...
+  AmbientBackLightingLib.vcxproj -> Q:\Projects\C++\AmbientBackLighting\Debug\AmbientBackLightingLib.dll
