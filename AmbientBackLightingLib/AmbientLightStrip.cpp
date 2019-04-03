@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "AmbientLightStrip.h"
+#include <cmath>
+#include <algorithm>
 
-const unsigned char AmbientLightStrip::LUT[] = {
+/*const unsigned char AmbientLightStrip::LUT[] = {
 	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,
 	1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,
@@ -18,7 +20,7 @@ const unsigned char AmbientLightStrip::LUT[] = {
 	144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,
 	177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
 	215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255
-};
+};*/
 
 
 AmbientLightStrip::AmbientLightStrip(
@@ -50,6 +52,21 @@ AmbientLightStrip::~AmbientLightStrip()
 
 	delete[] ColorBuffer;
 	hid_close(Device);
+}
+
+unsigned int LookUp(float Gamma, unsigned int Index)
+{
+	const unsigned int Max = 255;
+	auto Value = pow((float)Index / Max, Gamma) * Max + 0.5f;
+	//Value = std::clamp(Value, 0, Max); //TODO: we need to enable c++17
+	if (Value < 0)
+		Value = 0;
+
+	if (Value > Max)
+		Value = Max;
+
+
+	return floor(Value);
 }
 
 void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
@@ -128,9 +145,21 @@ void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 		ColorBuffer[i * 3 + 3] = NewR;
 		ColorBuffer[i * 3 + 4] = NewB;*/
 
-		ColorBuffer[i * 3 + 2] = LUT[g];
+		
+		/*ColorBuffer[i * 3 + 2] = LUT[g];
 		ColorBuffer[i * 3 + 3] = LUT[r];
-		ColorBuffer[i * 3 + 4] = LUT[b];
+		ColorBuffer[i * 3 + 4] = LUT[b];*/
+		
+		//TODO: figure out some good settings, generate per-channel LUTs based on config gamma values
+		auto GreenGamma = 2.95f;
+		ColorBuffer[i * 3 + 2] = LookUp(GreenGamma, g);
+
+		auto RedGamma = 2.8f;
+		ColorBuffer[i * 3 + 3] = LookUp(RedGamma, r);
+
+		auto BlueGamma = 3.05f;
+		ColorBuffer[i * 3 + 4] = LookUp(BlueGamma, b);
+
 	}
 
 	hid_send_feature_report(Device, ColorBuffer, BufferSize);

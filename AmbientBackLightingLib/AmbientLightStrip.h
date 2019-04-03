@@ -3,7 +3,6 @@
 #include "hidapi.h"
 #include "ScreenSampleInfo.h"
 
-
 class EXPORT AmbientLightStrip
 {
 public:
@@ -11,7 +10,12 @@ public:
 	~AmbientLightStrip();
 
 	void Update(float DeltaTime, HWND& Window);
-	static const unsigned char LUT[256];
+
+	//TODO: pull these out somewhere and generate them based on config data.
+	static const unsigned char LUTG[256];
+	static const unsigned char LUTR[256];
+	static const unsigned char LUTB[256];
+
 protected:
 
 	hid_device* Device;

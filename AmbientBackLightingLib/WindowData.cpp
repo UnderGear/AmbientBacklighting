@@ -14,6 +14,10 @@ static BOOL CALLBACK CheckWindow(HWND hwnd, LPARAM lParam)
 void WindowSelector::EnumerateWindows()
 {
 	Windows.clear();
+	
+	auto Data = WindowData{};
+	Data.Handle = GetDesktopWindow();
+	Windows.push_back(Data);
 
 	EnumWindows(CheckWindow, reinterpret_cast<LPARAM>(this));
 }

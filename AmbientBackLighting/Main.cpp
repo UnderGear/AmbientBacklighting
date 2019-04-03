@@ -163,7 +163,11 @@ DWORD WINAPI ServiceWorkerThread(LPVOID lpParam)
 {
 	Sleep(10000);
 
-	auto BackLighting = AmbientBackLighting{};
+	Config Config;
+	Config.HorizontalLightCount = 25;
+	Config.VerticalLightCount = 11;
+
+	auto BackLighting = AmbientBackLighting{ Config };
 
 	/*auto FailOut = [&](unsigned int i)
 	{
@@ -213,7 +217,7 @@ DWORD WINAPI ServiceWorkerThread(LPVOID lpParam)
 	}*/
 
 
-	const auto RefreshTime = 1000.f / BackLighting.Config.SamplesPerSecond;
+	const auto RefreshTime = 1000.f / Config.SamplesPerSecond;
 
 	//  Periodically check if the service has been requested to stop
 	while (WaitForSingleObject(ServiceStopEvent, 0) != WAIT_OBJECT_0)
