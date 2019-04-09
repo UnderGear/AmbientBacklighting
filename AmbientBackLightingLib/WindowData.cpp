@@ -68,7 +68,7 @@ void WindowSelector::UpdateSelection()
 {
 	for (unsigned int i = 0; i < 10; ++i)
 	{
-		auto Character = '0' + i;
+		auto Character = '0' + i; //kind of a hack, but it'll get the int I need
 		if (GetKeyState(Character) & 0x8000)
 		{
 			Index = i;

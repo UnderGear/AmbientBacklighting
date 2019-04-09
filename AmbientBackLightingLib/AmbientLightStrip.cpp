@@ -54,7 +54,7 @@ AmbientLightStrip::~AmbientLightStrip()
 	hid_close(Device);
 }
 
-unsigned int LookUp(float Gamma, unsigned int Index)
+unsigned int GammaCorrect(float Gamma, unsigned int Index)
 {
 	const unsigned int Max = 255;
 	auto Value = pow((float)Index / Max, Gamma) * Max + 0.5f;
@@ -65,13 +65,12 @@ unsigned int LookUp(float Gamma, unsigned int Index)
 	if (Value > Max)
 		Value = Max;
 
-
-	return floor(Value);
+	return (unsigned int)ceil(Value);
 }
 
 void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 {
-	auto WindowDC = GetDC(Window);
+	auto WindowDC = GetWindowDC(Window);
 	auto CaptureDC = CreateCompatibleDC(WindowDC);
 
 	auto CaptureBitmap = CreateCompatibleBitmap(WindowDC, SampleInfo.SampleWidth, SampleInfo.SampleHeight);
@@ -101,21 +100,22 @@ void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 
 			for (unsigned int y = SampleStartY; y < SampleEndY; ++y)
 			{
-				SampleR += Pixels[x + y * SampleInfo.SampleWidth].rgbRed;
-				SampleG += Pixels[x + y * SampleInfo.SampleWidth].rgbGreen;
-				SampleB += Pixels[x + y * SampleInfo.SampleWidth].rgbBlue;
+				//https://sighack.com/post/averaging-rgb-colors-the-right-way
+				SampleR += Pixels[x + y * SampleInfo.SampleWidth].rgbRed * Pixels[x + y * SampleInfo.SampleWidth].rgbRed;
+				SampleG += Pixels[x + y * SampleInfo.SampleWidth].rgbGreen * Pixels[x + y * SampleInfo.SampleWidth].rgbGreen;
+				SampleB += Pixels[x + y * SampleInfo.SampleWidth].rgbBlue * Pixels[x + y * SampleInfo.SampleWidth].rgbBlue;
 			}
 		}
 
 		//number of pixels in the sampled region so we can average the color value
 		auto SampleCount = Spacing * (SampleInfo.IsVertical ? SampleInfo.SampleWidth : SampleInfo.SampleHeight);
 
-		unsigned char r = (unsigned char)(SampleR / SampleCount);
-		unsigned char g = (unsigned char)(SampleG / SampleCount);
-		unsigned char b = (unsigned char)(SampleB / SampleCount);
+		unsigned char r = (unsigned char)sqrt(SampleR / SampleCount);
+		unsigned char g = (unsigned char)sqrt(SampleG / SampleCount);
+		unsigned char b = (unsigned char)sqrt(SampleB / SampleCount);
 
 		//TODO: lerp from the previous value to the new one.
-		//TODO: look up RGB->HSV, lerp, HSV->RGB. is this actually viable? some mappings just don't work. it's not 1:1
+		//TODO: look up RGB->HCL, lerp, HCL->RGB. is this actually viable? some mappings just don't work. it's not 1:1
 
 		/*const float LerpSpeed = 0.1f;
 		
@@ -151,19 +151,18 @@ void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 		ColorBuffer[i * 3 + 4] = LUT[b];*/
 		
 		//TODO: figure out some good settings, generate per-channel LUTs based on config gamma values
+		//TODO: compare perf on 3 LUTs vs calculation. cache misses might be a big deal.
 		auto GreenGamma = 2.95f;
-		ColorBuffer[i * 3 + 2] = LookUp(GreenGamma, g);
+		ColorBuffer[i * 3 + 2] = GammaCorrect(GreenGamma, g);
 
 		auto RedGamma = 2.8f;
-		ColorBuffer[i * 3 + 3] = LookUp(RedGamma, r);
+		ColorBuffer[i * 3 + 3] = GammaCorrect(RedGamma, r);
 
-		auto BlueGamma = 3.05f;
-		ColorBuffer[i * 3 + 4] = LookUp(BlueGamma, b);
-
+		auto BlueGamma = 3.2f;
+		ColorBuffer[i * 3 + 4] = GammaCorrect(BlueGamma, b);
 	}
 
 	hid_send_feature_report(Device, ColorBuffer, BufferSize);
-
 }
 
 void AmbientLightStrip::ClearBuffer()
