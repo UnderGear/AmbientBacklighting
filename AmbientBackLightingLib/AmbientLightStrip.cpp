@@ -29,6 +29,7 @@ AmbientLightStrip::AmbientLightStrip(
 {
 	Spacing = SampleInfo.IsVertical ? SampleInfo.SampleHeight / LightCount : SampleInfo.SampleWidth / LightCount;
 	
+	//TODO: report ID, maybe channel should come from the device config.
 	ColorBuffer = new unsigned char[BufferSize];
 	ColorBuffer[0] = 8; //Report ID
 	ColorBuffer[1] = 0; //Channel
@@ -58,12 +59,8 @@ unsigned int GammaCorrect(float Gamma, unsigned int Index)
 {
 	const unsigned int Max = 255;
 	auto Value = pow((float)Index / Max, Gamma) * Max + 0.5f;
-	//Value = std::clamp(Value, 0, Max); //TODO: we need to enable c++17
-	if (Value < 0)
-		Value = 0;
 
-	if (Value > Max)
-		Value = Max;
+	Value = max(min(Value, Max), 0);
 
 	return (unsigned int)ceil(Value);
 }
@@ -93,12 +90,12 @@ void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 		ULONG SampleR = 0;
 		ULONG SampleG = 0;
 		ULONG SampleB = 0;
-		for (unsigned int x = SampleStartX; x < SampleEndX; ++x)
+		for (unsigned int x = SampleStartX; x <= SampleEndX; ++x)
 		{
 			auto SampleStartY = SampleInfo.IsVertical ? Spacing * i : 0;
 			auto SampleEndY = SampleInfo.IsVertical ? SampleStartY + Spacing : SampleInfo.SampleHeight;
 
-			for (unsigned int y = SampleStartY; y < SampleEndY; ++y)
+			for (unsigned int y = SampleStartY; y <= SampleEndY; ++y)
 			{
 				//https://sighack.com/post/averaging-rgb-colors-the-right-way
 				SampleR += Pixels[x + y * SampleInfo.SampleWidth].rgbRed * Pixels[x + y * SampleInfo.SampleWidth].rgbRed;
@@ -117,34 +114,6 @@ void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 		//TODO: lerp from the previous value to the new one.
 		//TODO: look up RGB->HCL, lerp, HCL->RGB. is this actually viable? some mappings just don't work. it's not 1:1
 
-		/*const float LerpSpeed = 0.1f;
-		
-		auto TargetG = LUT[g];
-		auto CurrentG = ColorBuffer[i * 3 + 2];
-		auto DeltaG = TargetG - CurrentG;
-		auto NewG = CurrentG + (int)(DeltaG * DeltaTime * LerpSpeed);
-		if ((TargetG < CurrentG && NewG < TargetG) || (TargetG > CurrentG && NewG > TargetG))
-			NewG = TargetG;
-		
-		auto TargetR = LUT[r];
-		auto CurrentR = ColorBuffer[i * 3 + 3];
-		auto DeltaR = TargetR - CurrentR;
-		auto NewR = CurrentR + (int)(DeltaR * DeltaTime * LerpSpeed);
-		if ((TargetR < CurrentR && NewR < TargetR) || (TargetR > CurrentR && NewR > TargetR))
-			NewR = TargetR;
-
-
-		auto TargetB = LUT[b];
-		auto CurrentB = ColorBuffer[i * 3 + 4];
-		auto DeltaB = TargetB - CurrentB;
-		auto NewB = CurrentB + (int)(DeltaB * DeltaTime * LerpSpeed);
-		if ((TargetB < CurrentB && NewB < TargetB) || (TargetB > CurrentB && NewB > TargetB))
-			NewB = TargetB;
-
-		ColorBuffer[i * 3 + 2] = NewG;
-		ColorBuffer[i * 3 + 3] = NewR;
-		ColorBuffer[i * 3 + 4] = NewB;*/
-
 		
 		/*ColorBuffer[i * 3 + 2] = LUT[g];
 		ColorBuffer[i * 3 + 3] = LUT[r];
@@ -158,7 +127,7 @@ void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 		auto RedGamma = 2.8f;
 		ColorBuffer[i * 3 + 3] = GammaCorrect(RedGamma, r);
 
-		auto BlueGamma = 3.2f;
+		auto BlueGamma = 3.0f;
 		ColorBuffer[i * 3 + 4] = GammaCorrect(BlueGamma, b);
 	}
 

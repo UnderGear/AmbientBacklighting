@@ -8,58 +8,37 @@ AmbientBackLighting::AmbientBackLighting(Config InConfig)
 	AppConfig = InConfig;
 	//TODO: let's pass in CL args or read from a config file and populate our config struct that way.;
 
-	//TODO: listen for screen size changes and recalculate stuff as necessary
-	nScreenWidth = GetSystemMetrics(SM_CXSCREEN);
-	nScreenHeight = GetSystemMetrics(SM_CYSCREEN);
-	verticalSpacing = nScreenHeight / AppConfig.VerticalLightCount;
-	horizontalSpacing = nScreenWidth / AppConfig.HorizontalLightCount;
-	
-	//TODO: read from config? maybe calculate based on config and looking up in the library?
-	BufferSize = 2 + 3 * 32;
+	auto nScreenWidth = GetSystemMetrics(SM_CXSCREEN);
+	auto nScreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
 	//TODO: report ID should probably come from the library, based on the # of lights in config
 
 	//TODO: monitor devices, update these as necessary
-	//TODO: move the serial numbers into config
 
-	if (auto* TopDevice = hid_open(0x20a0, 0x41e5, TEXT("BS021580-3.1")))
+	for (auto& LightInfo : AppConfig.Lights)
 	{
-		auto SampleInfo = ScreenSampleInfo{};
-		SampleInfo.SampleWidth = nScreenWidth;
-		SampleInfo.SampleHeight = AppConfig.SampleThickness;
-		SampleInfo.SampleOffsetX = 0;
-		SampleInfo.SampleOffsetY = 0;
-		LightStripTop = new AmbientLightStrip(TopDevice, AppConfig.HorizontalLightCount, BufferSize, SampleInfo);
-	}
+		if (auto* Device = hid_open(LightInfo.vendor_id, LightInfo.product_id, LightInfo.serial))
+		{
+			auto SampleInfo = ScreenSampleInfo
+			{
+				LightInfo.is_vertical,
+				(int)(LightInfo.is_vertical ? AppConfig.SampleThickness : nScreenWidth),
+				(int)(LightInfo.is_vertical ? nScreenHeight : AppConfig.SampleThickness),
+				(int)(LightInfo.is_right_aligned ? nScreenWidth - AppConfig.SampleThickness : 0),
+				(int)(LightInfo.is_bottom_aligned ? nScreenHeight - AppConfig.SampleThickness : 0)
+			};
+			LightStrips.push_back(new AmbientLightStrip(Device, LightInfo.light_count, LightInfo.buffer_size, SampleInfo));
 
-	if (auto* LeftDevice = hid_open(0x20a0, 0x41e5, TEXT("BS021630-3.1")))
-	{
-		auto SampleInfo = ScreenSampleInfo{};
-		SampleInfo.SampleWidth = AppConfig.SampleThickness;
-		SampleInfo.SampleHeight = nScreenHeight;
-		SampleInfo.SampleOffsetX = 0;
-		SampleInfo.SampleOffsetY = 0;
-		SampleInfo.IsVertical = true;
-		LightStripLeft = new AmbientLightStrip(LeftDevice, AppConfig.VerticalLightCount, BufferSize, SampleInfo);
-	}
-
-	if (auto* RightDevice = hid_open(0x20a0, 0x41e5, TEXT("BS021581-3.1")))
-	{
-		auto SampleInfo = ScreenSampleInfo{};
-		SampleInfo.SampleWidth = AppConfig.SampleThickness;
-		SampleInfo.SampleHeight = nScreenHeight;
-		SampleInfo.SampleOffsetX = nScreenWidth - AppConfig.SampleThickness;
-		SampleInfo.SampleOffsetY = 0;
-		SampleInfo.IsVertical = true;
-		LightStripRight = new AmbientLightStrip(RightDevice, AppConfig.VerticalLightCount, BufferSize, SampleInfo);
+		}
 	}
 };
 
 AmbientBackLighting::~AmbientBackLighting()
 {
-	delete LightStripTop;
-	delete LightStripLeft;
-	delete LightStripRight;
+	for (auto* Light : LightStrips)
+		delete Light;
+
+	LightStrips.clear();
 };
 
 void AmbientBackLighting::Update(float DeltaTime)
@@ -71,14 +50,8 @@ void AmbientBackLighting::Update(float DeltaTime)
 	if (WindowSelector.HasValidSelection())
 		Window = WindowSelector.GetSelectedWindow();
 
-	if (LightStripTop)
-		LightStripTop->Update(DeltaTime, Window);
-
-	if (LightStripLeft)
-		LightStripLeft->Update(DeltaTime, Window);
-
-	if (LightStripRight)
-		LightStripRight->Update(DeltaTime, Window);
+	for (auto* Light : LightStrips)
+		Light->Update(DeltaTime, Window);
 
 	//TODO: do we want to do some HID monitoring in here? if we find one we're looking for, create it?
 	//likewise, destroy removed devices
