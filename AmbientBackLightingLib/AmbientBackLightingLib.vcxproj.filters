@@ -39,6 +39,12 @@
     <ClInclude Include="WindowData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ImageSummarizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Color.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -54,6 +60,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WindowData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageSummarizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

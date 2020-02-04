@@ -13,7 +13,7 @@ static BOOL CALLBACK CheckWindow(HWND hwnd, LPARAM lParam)
 
 void WindowSelector::EnumerateWindows()
 {
-	Windows.clear();
+	Windows.clear(); //TODO: maybe we don't really need to clear this every time. only add uniques to the list and remove if no longer found?
 	
 	auto Data = WindowData{};
 	Data.Handle = GetDesktopWindow();
@@ -64,16 +64,20 @@ BOOL WindowSelector::CheckWindowMatch(HWND hwnd)
 	return true;
 }
 
+//TODO: do this on key down callbacks or something instead.
 void WindowSelector::UpdateSelection()
 {
-	for (unsigned int i = 0; i < 10; ++i)
+	//if (GetKeyState((VK_MENU) & 0x8000) == false)
+		//return;
+
+	/*for (unsigned int i = 0; i < 10; ++i)
 	{
 		auto Character = '0' + i; //kind of a hack, but it'll get the int I need
 		if (GetKeyState(Character) & 0x8000)
 		{
 			Index = i;
 		}
-	}
+	}*/
 }
 
 void WindowSelector::Update()

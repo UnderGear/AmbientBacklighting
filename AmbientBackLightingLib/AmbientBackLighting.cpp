@@ -45,10 +45,14 @@ void AmbientBackLighting::Update(float DeltaTime)
 {
 	auto Window = GetDesktopWindow();
 
-	WindowSelector.Update();
+	//WindowSelector.Update();
 
-	if (WindowSelector.HasValidSelection())
-		Window = WindowSelector.GetSelectedWindow();
+	//if (WindowSelector.HasValidSelection())
+		//Window = WindowSelector.GetSelectedWindow();
+
+	//TODO: remove this after testing.
+	//Window = GetForegroundWindow();
+
 
 	for (auto* Light : LightStrips)
 		Light->Update(DeltaTime, Window);

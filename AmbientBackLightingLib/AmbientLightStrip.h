@@ -2,6 +2,7 @@
 
 #include "hidapi.h"
 #include "ScreenSampleInfo.h"
+#include "ImageSummarizer.h"
 
 class EXPORT AmbientLightStrip
 {
@@ -28,6 +29,8 @@ protected:
 	ScreenSampleInfo SampleInfo;
 	RGBQUAD* Pixels;
 	BITMAPINFO BMI;
+
+	IImageSummarizer* ImageSummarizer;
 
 	void ClearBuffer();
 };

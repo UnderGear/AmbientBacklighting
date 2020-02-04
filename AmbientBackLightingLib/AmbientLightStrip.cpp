@@ -2,6 +2,7 @@
 #include "AmbientLightStrip.h"
 #include <cmath>
 #include <algorithm>
+#include <vector>
 
 /*const unsigned char AmbientLightStrip::LUT[] = {
 	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -22,17 +23,19 @@
 	215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255
 };*/
 
-
+//TODO: how are we going to initialize the sample color seeds?
 AmbientLightStrip::AmbientLightStrip(
 	hid_device* InDevice, unsigned int InLightCount, size_t InBufferSize, ScreenSampleInfo InSampleInfo)
 	: Device(InDevice), LightCount(InLightCount), BufferSize(InBufferSize), SampleInfo(InSampleInfo)
 {
 	Spacing = SampleInfo.IsVertical ? SampleInfo.SampleHeight / LightCount : SampleInfo.SampleWidth / LightCount;
-	
+
 	//TODO: report ID, maybe channel should come from the device config.
 	ColorBuffer = new unsigned char[BufferSize];
-	ColorBuffer[0] = 8; //Report ID
-	ColorBuffer[1] = 0; //Channel
+	constexpr unsigned char ReportId = 8;
+	ColorBuffer[0] = ReportId;
+	constexpr unsigned char Channel = 0;
+	ColorBuffer[1] = Channel;
 
 	Pixels = new RGBQUAD[SampleInfo.SampleWidth * SampleInfo.SampleHeight];
 	BMI = { 0 };
@@ -42,6 +45,22 @@ AmbientLightStrip::AmbientLightStrip(
 	BMI.bmiHeader.biPlanes = 1;
 	BMI.bmiHeader.biBitCount = 32;
 	BMI.bmiHeader.biCompression = BI_RGB;
+
+	/*std::vector<Color> Seeds
+	{
+		{0, 255, 255}, //aqua
+		{255, 0, 0}, //red
+		{0, 255, 0}, //green
+		{0, 0, 255}, //blue
+		{255, 255, 255}, //white
+		{255, 0, 255}, //purple
+		{255, 255, 0}, //yellow
+		{0, 0, 0}, //black
+	};
+	ImageSummarizer = new VoronoiImageSummarizer{ Seeds };*/
+
+	auto UseRootMeanSquare = true;
+	ImageSummarizer = new AverageImageSummarizer{ UseRootMeanSquare };
 }
 
 AmbientLightStrip::~AmbientLightStrip()
@@ -53,15 +72,22 @@ AmbientLightStrip::~AmbientLightStrip()
 
 	delete[] ColorBuffer;
 	hid_close(Device);
+
+	delete ImageSummarizer;
 }
 
 unsigned int GammaCorrect(float Gamma, unsigned int Index)
 {
-	const unsigned int Max = 255;
+	constexpr unsigned int Min = 0;
+	constexpr unsigned int Max = 255;
+
+	//corrected value is (Index/255)^Gamma * Max + 0.5
 	auto Value = pow((float)Index / Max, Gamma) * Max + 0.5f;
 
-	Value = max(min(Value, Max), 0);
+	//clamp to the range [0, 255]
+	Value = max(min(Value, Max), Min);
 
+	//round to the nearest integer
 	return (unsigned int)ceil(Value);
 }
 
@@ -69,7 +95,6 @@ void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 {
 	auto WindowDC = GetWindowDC(Window);
 	auto CaptureDC = CreateCompatibleDC(WindowDC);
-
 	auto CaptureBitmap = CreateCompatibleBitmap(WindowDC, SampleInfo.SampleWidth, SampleInfo.SampleHeight);
 
 	SelectObject(CaptureDC, CaptureBitmap);
@@ -82,38 +107,35 @@ void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 
 	ClearBuffer();
 
+	//TODO: this should probably be extracted to its own series of methods
 	for (unsigned int i = 0; i < LightCount; ++i)
 	{
+		ImageSummarizer->ClearSamples();
+
 		auto SampleStartX = SampleInfo.IsVertical ? 0 : Spacing * i;
 		auto SampleEndX = SampleInfo.IsVertical ? SampleInfo.SampleWidth : SampleStartX + Spacing;
+		auto SampleStartY = SampleInfo.IsVertical ? Spacing * i : 0;
+		auto SampleEndY = SampleInfo.IsVertical ? SampleStartY + Spacing : SampleInfo.SampleHeight;
+		unsigned int SampleCount = 0;
 
-		ULONG SampleR = 0;
-		ULONG SampleG = 0;
-		ULONG SampleB = 0;
 		for (unsigned int x = SampleStartX; x <= SampleEndX; ++x)
 		{
-			auto SampleStartY = SampleInfo.IsVertical ? Spacing * i : 0;
-			auto SampleEndY = SampleInfo.IsVertical ? SampleStartY + Spacing : SampleInfo.SampleHeight;
-
 			for (unsigned int y = SampleStartY; y <= SampleEndY; ++y)
 			{
-				//https://sighack.com/post/averaging-rgb-colors-the-right-way
-				SampleR += Pixels[x + y * SampleInfo.SampleWidth].rgbRed * Pixels[x + y * SampleInfo.SampleWidth].rgbRed;
-				SampleG += Pixels[x + y * SampleInfo.SampleWidth].rgbGreen * Pixels[x + y * SampleInfo.SampleWidth].rgbGreen;
-				SampleB += Pixels[x + y * SampleInfo.SampleWidth].rgbBlue * Pixels[x + y * SampleInfo.SampleWidth].rgbBlue;
+				ImageSummarizer->AddSample({
+					Pixels[x + y * SampleInfo.SampleWidth].rgbRed,
+					Pixels[x + y * SampleInfo.SampleWidth].rgbGreen,
+					Pixels[x + y * SampleInfo.SampleWidth].rgbBlue
+				});
 			}
 		}
 
-		//number of pixels in the sampled region so we can average the color value
-		auto SampleCount = Spacing * (SampleInfo.IsVertical ? SampleInfo.SampleWidth : SampleInfo.SampleHeight);
+		auto Color = ImageSummarizer->GetColor();
+		auto r = (unsigned char)Color.R;
+		auto g = (unsigned char)Color.G;
+		auto b = (unsigned char)Color.B;
 
-		unsigned char r = (unsigned char)sqrt(SampleR / SampleCount);
-		unsigned char g = (unsigned char)sqrt(SampleG / SampleCount);
-		unsigned char b = (unsigned char)sqrt(SampleB / SampleCount);
-
-		//TODO: lerp from the previous value to the new one.
 		//TODO: look up RGB->HCL, lerp, HCL->RGB. is this actually viable? some mappings just don't work. it's not 1:1
-
 		
 		/*ColorBuffer[i * 3 + 2] = LUT[g];
 		ColorBuffer[i * 3 + 3] = LUT[r];
@@ -121,14 +143,24 @@ void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 		
 		//TODO: figure out some good settings, generate per-channel LUTs based on config gamma values
 		//TODO: compare perf on 3 LUTs vs calculation. cache misses might be a big deal.
+
+		//TODO: these gamma values should be read from config, which should be passed in during ctor
+
+		const unsigned int Stride = 3;
+		const unsigned int GreenIndexOffset = 2;
 		auto GreenGamma = 2.95f;
-		ColorBuffer[i * 3 + 2] = GammaCorrect(GreenGamma, g);
+		ColorBuffer[i * Stride + GreenIndexOffset] = //g;
+													 GammaCorrect(GreenGamma, g);
 
 		auto RedGamma = 2.8f;
-		ColorBuffer[i * 3 + 3] = GammaCorrect(RedGamma, r);
+		const unsigned int RedIndexOffset = 3;
+		ColorBuffer[i * Stride + RedIndexOffset] = //r;
+												   GammaCorrect(RedGamma, r);
 
-		auto BlueGamma = 3.0f;
-		ColorBuffer[i * 3 + 4] = GammaCorrect(BlueGamma, b);
+		auto BlueGamma = 3.2f;
+		const unsigned int BlueIndexOffset = 4;
+		ColorBuffer[i * Stride + BlueIndexOffset] = //b;
+													GammaCorrect(BlueGamma, b);
 	}
 
 	hid_send_feature_report(Device, ColorBuffer, BufferSize);
@@ -142,3 +174,4 @@ void AmbientLightStrip::ClearBuffer()
 		ColorBuffer[i] = 0;
 	}
 }
+
