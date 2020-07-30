@@ -7,30 +7,25 @@
 class EXPORT AmbientLightStrip
 {
 public:
-	AmbientLightStrip(hid_device* InDevice, unsigned int InLightCount, size_t InBufferSize, ScreenSampleInfo InSampleInfo);
+	AmbientLightStrip(hid_device* InDevice, int InLightCount, size_t InBufferSize, ScreenSampleInfo InSampleInfo);
 	~AmbientLightStrip();
 
-	void Update(float DeltaTime, HWND& Window);
-
-	//TODO: pull these out somewhere and generate them based on config data.
-	static const unsigned char LUTG[256];
-	static const unsigned char LUTR[256];
-	static const unsigned char LUTB[256];
-
+	void Update(HWND& Window, IImageSummarizer& ImageSummarizer, const struct Config& Config);
 protected:
 
 	hid_device* Device;
-	unsigned int LightCount;
-	unsigned int Spacing;
+	int LightCount;
+	int Spacing;
 
 	size_t BufferSize;
 	unsigned char* ColorBuffer;
 
 	ScreenSampleInfo SampleInfo;
-	RGBQUAD* Pixels;
+	RGBQUAD* ScreenSample;
 	BITMAPINFO BMI;
 
-	IImageSummarizer* ImageSummarizer;
+	void UpdateScreenSample(HWND& Window);
+	void UpdateLightAtIndex(int Index, IImageSummarizer& ImageSummarizer, const struct Config& Config);
 
 	void ClearBuffer();
 };

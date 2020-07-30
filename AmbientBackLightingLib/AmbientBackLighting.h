@@ -5,18 +5,19 @@
 #include "WindowData.h"
 #include <vector>
 
-class AmbientLightStrip;
-
 class EXPORT AmbientBackLighting
 {
 public:
-	void Update(float DeltaTime);
-	AmbientBackLighting(Config InConfig);
+	void Update();
+	AmbientBackLighting();
 	~AmbientBackLighting();
+
+	int GetRefreshMilliseconds() const { return (int)(1000.f / AppConfig.SamplesPerSecond); }
 
 protected:
 
 	Config AppConfig;
 	WindowSelector WindowSelector;
-	std::vector<AmbientLightStrip*> LightStrips;
+	class IImageSummarizer* ImageSummarizer;
+	std::vector<class AmbientLightStrip*> LightStrips;
 };

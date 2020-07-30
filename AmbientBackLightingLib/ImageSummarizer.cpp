@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "ImageSummarizer.h"
 
-void ColorSampler::AddSample(const Color& Sample)
+void RGBSampler::AddSample(const ColorRGB& Sample)
 {
 	if (UseRootMeanSquare)
 	{
@@ -19,7 +19,7 @@ void ColorSampler::AddSample(const Color& Sample)
 	++SampleCount;
 }
 
-void ColorSampler::ClearSamples()
+void RGBSampler::ClearSamples()
 {
 	R = 0;
 	G = 0;
@@ -28,7 +28,7 @@ void ColorSampler::ClearSamples()
 	SampleCount = 0;
 }
 
-Color ColorSampler::GetAverageColor() const
+ColorRGB RGBSampler::GetAverageColor() const
 {
 	if (UseRootMeanSquare)
 	{
@@ -50,7 +50,38 @@ Color ColorSampler::GetAverageColor() const
 	}
 }
 
-VoronoiImageSummarizer::VoronoiImageSummarizer(const std::vector<Color>& Colors)
+void LUVSampler::AddSample(const ColorRGB& Sample)
+{
+	auto SampleLUV = Sample.ToXYZ().ToLUV();
+	L += SampleLUV.L;
+	U += SampleLUV.U;
+	V += SampleLUV.V;
+
+	++SampleCount;
+}
+
+void LUVSampler::ClearSamples()
+{
+	L = 0;
+	U = 0;
+	V = 0;
+
+	SampleCount = 0;
+}
+
+ColorRGB LUVSampler::GetAverageColor() const
+{
+	ColorLUV Average = 
+	{
+		(float)(L / SampleCount),
+		(float)(U / SampleCount),
+		(float)(V / SampleCount)
+	};
+	
+	return Average.ToXYZ().ToRGB();
+}
+
+VoronoiImageSummarizer::VoronoiImageSummarizer(const std::vector<ColorRGB>& Colors)
 {
 	Cells.empty();
 	Cells.reserve(Colors.size());
@@ -58,15 +89,15 @@ VoronoiImageSummarizer::VoronoiImageSummarizer(const std::vector<Color>& Colors)
 	for (auto& Color : Colors)
 	{
 		auto Cell = VoronoiCell{ Color };
-		ColorSampler Sampler;
+		RGBSampler Sampler;
 		Cells.push_back(std::make_pair(Cell, Sampler));
 	}
 }
 
-void VoronoiImageSummarizer::AddSample(const Color& Sample)
+void VoronoiImageSummarizer::AddSample(const ColorRGB& Sample)
 {
 	double ClosestDistance = DBL_MAX;
-	ColorSampler* BestSampleAverager = nullptr;
+	RGBSampler* BestSampleAverager = nullptr;
 
 	//find the closest cell's sampler.
 	for (auto& Pair : Cells)
@@ -93,10 +124,10 @@ void VoronoiImageSummarizer::ClearSamples()
 	}
 }
 
-Color VoronoiImageSummarizer::GetColor() const
+ColorRGB VoronoiImageSummarizer::GetColor() const
 {
 	unsigned int HighestSampleCount = 0;
-	const ColorSampler* HighestSampleAverager = nullptr;
+	const RGBSampler* HighestSampleAverager = nullptr;
 
 	for (auto& Pair : Cells)
 	{
@@ -114,7 +145,7 @@ Color VoronoiImageSummarizer::GetColor() const
 	return HighestSampleAverager->GetAverageColor();
 }
 
-void AverageImageSummarizer::AddSample(const Color& Sample)
+void AverageImageSummarizer::AddSample(const ColorRGB& Sample)
 {
 	Sampler.AddSample(Sample);
 }
@@ -124,7 +155,22 @@ void AverageImageSummarizer::ClearSamples()
 	Sampler.ClearSamples();
 }
 
-Color AverageImageSummarizer::GetColor() const
+ColorRGB AverageImageSummarizer::GetColor() const
+{
+	return Sampler.GetAverageColor();
+}
+
+void AverageLUVImageSummarizer::AddSample(const ColorRGB& Sample)
+{
+	Sampler.AddSample(Sample);
+}
+
+void AverageLUVImageSummarizer::ClearSamples()
+{
+	Sampler.ClearSamples();
+}
+
+ColorRGB AverageLUVImageSummarizer::GetColor() const
 {
 	return Sampler.GetAverageColor();
 }

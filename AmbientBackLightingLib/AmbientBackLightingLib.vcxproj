@@ -167,6 +167,7 @@
   <ItemGroup>
     <ClCompile Include="AmbientBackLighting.cpp" />
     <ClCompile Include="AmbientLightStrip.cpp" />
+    <ClCompile Include="Color.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="ImageSummarizer.cpp" />
     <ClCompile Include="stdafx.cpp">

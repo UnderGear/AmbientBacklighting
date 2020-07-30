@@ -3,10 +3,30 @@
 #include "AmbientLightStrip.h"
 #include "ScreenSampleInfo.h"
 
-AmbientBackLighting::AmbientBackLighting(Config InConfig)
+AmbientBackLighting::AmbientBackLighting()
 {
-	AppConfig = InConfig;
+	AppConfig = Config{};
 	//TODO: let's pass in CL args or read from a config file and populate our config struct that way.;
+
+	/*std::vector<Color> Seeds
+	{
+		{0, 255, 255}, //aqua
+		{255, 0, 0}, //red
+		{0, 255, 0}, //green
+		{0, 0, 255}, //blue
+		{255, 255, 255}, //white
+		{255, 0, 255}, //purple
+		{255, 255, 0}, //yellow
+		{0, 0, 0}, //black
+	};
+	ImageSummarizer = new VoronoiImageSummarizer{ Seeds };*/
+
+	//TODO: it'd be good to have an enum in the config that tells us which implementation to use.
+	constexpr auto UseRootMeanSquare = true;
+	ImageSummarizer = new AverageImageSummarizer{ UseRootMeanSquare };
+
+	//ImageSummarizer = new AverageLUVImageSummarizer();
+
 
 	auto nScreenWidth = GetSystemMetrics(SM_CXSCREEN);
 	auto nScreenHeight = GetSystemMetrics(SM_CYSCREEN);
@@ -19,16 +39,16 @@ AmbientBackLighting::AmbientBackLighting(Config InConfig)
 	{
 		if (auto* Device = hid_open(LightInfo.vendor_id, LightInfo.product_id, LightInfo.serial))
 		{
+			auto IsVertical = LightInfo.alignment == LightStripAlignment::Left || LightInfo.alignment == LightStripAlignment::Right;
 			auto SampleInfo = ScreenSampleInfo
 			{
-				LightInfo.is_vertical,
-				(int)(LightInfo.is_vertical ? AppConfig.SampleThickness : nScreenWidth),
-				(int)(LightInfo.is_vertical ? nScreenHeight : AppConfig.SampleThickness),
-				(int)(LightInfo.is_right_aligned ? nScreenWidth - AppConfig.SampleThickness : 0),
-				(int)(LightInfo.is_bottom_aligned ? nScreenHeight - AppConfig.SampleThickness : 0)
+				IsVertical,
+				(int)(IsVertical ? AppConfig.SampleThickness : nScreenWidth),
+				(int)(IsVertical ? nScreenHeight : AppConfig.SampleThickness),
+				(int)(LightInfo.alignment == LightStripAlignment::Right ? nScreenWidth - AppConfig.SampleThickness : 0),
+				(int)(LightInfo.alignment == LightStripAlignment::Bottom ? nScreenHeight - AppConfig.SampleThickness : 0)
 			};
 			LightStrips.push_back(new AmbientLightStrip(Device, LightInfo.light_count, LightInfo.buffer_size, SampleInfo));
-
 		}
 	}
 };
@@ -39,9 +59,11 @@ AmbientBackLighting::~AmbientBackLighting()
 		delete Light;
 
 	LightStrips.clear();
+
+	delete ImageSummarizer;
 };
 
-void AmbientBackLighting::Update(float DeltaTime)
+void AmbientBackLighting::Update()
 {
 	auto Window = GetDesktopWindow();
 
@@ -55,7 +77,11 @@ void AmbientBackLighting::Update(float DeltaTime)
 
 
 	for (auto* Light : LightStrips)
-		Light->Update(DeltaTime, Window);
+	{
+		Light->Update(Window, *ImageSummarizer, AppConfig);
+		//don't trust the light to clear the samples, I guess.
+		ImageSummarizer->ClearSamples();
+	}
 
 	//TODO: do we want to do some HID monitoring in here? if we find one we're looking for, create it?
 	//likewise, destroy removed devices
@@ -103,7 +129,4 @@ void AmbientBackLighting::Update(float DeltaTime)
 	// Get # of LEDs
 	unsigned char CurrentLEDCount[2] = { 0x81, 0 };
 	auto LEDCountResult = hid_get_feature_report(DeviceHandle, CurrentLEDCount, 2);*/
-	
-
-	
 }

@@ -3,29 +3,10 @@
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include "Config.h"
 
-/*const unsigned char AmbientLightStrip::LUT[] = {
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,
-	1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,
-	2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
-	5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,
-	10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,
-	17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,
-	25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,
-	37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,
-	51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
-	69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,
-	90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,
-	115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,
-	144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,
-	177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
-	215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255
-};*/
-
-//TODO: how are we going to initialize the sample color seeds?
 AmbientLightStrip::AmbientLightStrip(
-	hid_device* InDevice, unsigned int InLightCount, size_t InBufferSize, ScreenSampleInfo InSampleInfo)
+	hid_device* InDevice, int InLightCount, size_t InBufferSize, ScreenSampleInfo InSampleInfo)
 	: Device(InDevice), LightCount(InLightCount), BufferSize(InBufferSize), SampleInfo(InSampleInfo)
 {
 	Spacing = SampleInfo.IsVertical ? SampleInfo.SampleHeight / LightCount : SampleInfo.SampleWidth / LightCount;
@@ -37,7 +18,7 @@ AmbientLightStrip::AmbientLightStrip(
 	constexpr unsigned char Channel = 0;
 	ColorBuffer[1] = Channel;
 
-	Pixels = new RGBQUAD[SampleInfo.SampleWidth * SampleInfo.SampleHeight];
+	ScreenSample = new RGBQUAD[SampleInfo.SampleWidth * SampleInfo.SampleHeight];
 	BMI = { 0 };
 	BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
 	BMI.bmiHeader.biWidth = SampleInfo.SampleWidth;
@@ -45,53 +26,52 @@ AmbientLightStrip::AmbientLightStrip(
 	BMI.bmiHeader.biPlanes = 1;
 	BMI.bmiHeader.biBitCount = 32;
 	BMI.bmiHeader.biCompression = BI_RGB;
-
-	/*std::vector<Color> Seeds
-	{
-		{0, 255, 255}, //aqua
-		{255, 0, 0}, //red
-		{0, 255, 0}, //green
-		{0, 0, 255}, //blue
-		{255, 255, 255}, //white
-		{255, 0, 255}, //purple
-		{255, 255, 0}, //yellow
-		{0, 0, 0}, //black
-	};
-	ImageSummarizer = new VoronoiImageSummarizer{ Seeds };*/
-
-	auto UseRootMeanSquare = true;
-	ImageSummarizer = new AverageImageSummarizer{ UseRootMeanSquare };
 }
 
 AmbientLightStrip::~AmbientLightStrip()
 {
-	delete[] Pixels;
+	delete[] ScreenSample;
 
+	//send one last message to clear out the LED strip
 	ClearBuffer();
 	hid_send_feature_report(Device, ColorBuffer, BufferSize);
 
 	delete[] ColorBuffer;
 	hid_close(Device);
-
-	delete ImageSummarizer;
 }
 
-unsigned int GammaCorrect(float Gamma, unsigned int Index)
+int GammaCorrect(float Gamma, int Index)
 {
-	constexpr unsigned int Min = 0;
-	constexpr unsigned int Max = 255;
+	constexpr float Min = 0.f;
+	constexpr float Max = 255.f;
 
 	//corrected value is (Index/255)^Gamma * Max + 0.5
-	auto Value = pow((float)Index / Max, Gamma) * Max + 0.5f;
+	auto Value = pow(Index / Max, Gamma) * Max + 0.5f;
 
+	//TODO: do we even really need to worry about this being below 0?
 	//clamp to the range [0, 255]
 	Value = max(min(Value, Max), Min);
 
 	//round to the nearest integer
-	return (unsigned int)ceil(Value);
+	return (int)Value;
 }
 
-void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
+void AmbientLightStrip::Update(HWND& Window, IImageSummarizer& ImageSummarizer, const Config& Config)
+{
+	//take a snip of the screen for this strip
+	UpdateScreenSample(Window);
+
+	//calculate the summarized color for each light
+	for (auto i = 0; i < LightCount; ++i)
+	{
+		UpdateLightAtIndex(i, ImageSummarizer, Config);
+	}
+
+	//tell the LED strip what color its lights should be
+	hid_send_feature_report(Device, ColorBuffer, BufferSize);
+}
+
+void AmbientLightStrip::UpdateScreenSample(HWND& Window)
 {
 	auto WindowDC = GetWindowDC(Window);
 	auto CaptureDC = CreateCompatibleDC(WindowDC);
@@ -99,79 +79,53 @@ void AmbientLightStrip::Update(float DeltaTime, HWND& Window)
 
 	SelectObject(CaptureDC, CaptureBitmap);
 	BitBlt(CaptureDC, 0, 0, SampleInfo.SampleWidth, SampleInfo.SampleHeight, WindowDC, SampleInfo.SampleOffsetX, SampleInfo.SampleOffsetY, SRCCOPY | CAPTUREBLT);
-	GetDIBits(CaptureDC, CaptureBitmap, 0, SampleInfo.SampleHeight, Pixels, &BMI, DIB_RGB_COLORS);
+	GetDIBits(CaptureDC, CaptureBitmap, 0, SampleInfo.SampleHeight, ScreenSample, &BMI, DIB_RGB_COLORS);
 
 	ReleaseDC(Window, WindowDC);
 	DeleteDC(CaptureDC);
 	DeleteObject(CaptureBitmap);
+}
 
-	ClearBuffer();
+void AmbientLightStrip::UpdateLightAtIndex(int Index, IImageSummarizer& ImageSummarizer, const Config& Config)
+{
+	//TODO: I think all of these calculations should be handled before we even get to this point.
+	//TODO: it should all be pre-calculated during construction
+	const auto SampleStartX = SampleInfo.IsVertical ? 0 : Spacing * Index;
+	const auto SampleEndX = SampleInfo.IsVertical ? SampleInfo.SampleWidth : SampleStartX + Spacing;
+	const auto SampleStartY = SampleInfo.IsVertical ? Spacing * Index : 0;
+	const auto SampleEndY = SampleInfo.IsVertical ? SampleStartY + Spacing : SampleInfo.SampleHeight;
 
-	//TODO: this should probably be extracted to its own series of methods
-	for (unsigned int i = 0; i < LightCount; ++i)
+	for (int x = SampleStartX; x <= SampleEndX; ++x)
 	{
-		ImageSummarizer->ClearSamples();
-
-		auto SampleStartX = SampleInfo.IsVertical ? 0 : Spacing * i;
-		auto SampleEndX = SampleInfo.IsVertical ? SampleInfo.SampleWidth : SampleStartX + Spacing;
-		auto SampleStartY = SampleInfo.IsVertical ? Spacing * i : 0;
-		auto SampleEndY = SampleInfo.IsVertical ? SampleStartY + Spacing : SampleInfo.SampleHeight;
-		unsigned int SampleCount = 0;
-
-		for (unsigned int x = SampleStartX; x <= SampleEndX; ++x)
+		for (int y = SampleStartY; y <= SampleEndY; ++y)
 		{
-			for (unsigned int y = SampleStartY; y <= SampleEndY; ++y)
-			{
-				ImageSummarizer->AddSample({
-					Pixels[x + y * SampleInfo.SampleWidth].rgbRed,
-					Pixels[x + y * SampleInfo.SampleWidth].rgbGreen,
-					Pixels[x + y * SampleInfo.SampleWidth].rgbBlue
-				});
-			}
+			const auto SampleIndex = x + y * SampleInfo.SampleWidth;
+			const auto& Sample = ScreenSample[SampleIndex];
+			ImageSummarizer.AddSample({ Sample.rgbRed,	Sample.rgbGreen, Sample.rgbBlue	});
 		}
-
-		auto Color = ImageSummarizer->GetColor();
-		auto r = (unsigned char)Color.R;
-		auto g = (unsigned char)Color.G;
-		auto b = (unsigned char)Color.B;
-
-		//TODO: look up RGB->HCL, lerp, HCL->RGB. is this actually viable? some mappings just don't work. it's not 1:1
-		
-		/*ColorBuffer[i * 3 + 2] = LUT[g];
-		ColorBuffer[i * 3 + 3] = LUT[r];
-		ColorBuffer[i * 3 + 4] = LUT[b];*/
-		
-		//TODO: figure out some good settings, generate per-channel LUTs based on config gamma values
-		//TODO: compare perf on 3 LUTs vs calculation. cache misses might be a big deal.
-
-		//TODO: these gamma values should be read from config, which should be passed in during ctor
-
-		const unsigned int Stride = 3;
-		const unsigned int GreenIndexOffset = 2;
-		auto GreenGamma = 2.95f;
-		ColorBuffer[i * Stride + GreenIndexOffset] = //g;
-													 GammaCorrect(GreenGamma, g);
-
-		auto RedGamma = 2.8f;
-		const unsigned int RedIndexOffset = 3;
-		ColorBuffer[i * Stride + RedIndexOffset] = //r;
-												   GammaCorrect(RedGamma, r);
-
-		auto BlueGamma = 3.2f;
-		const unsigned int BlueIndexOffset = 4;
-		ColorBuffer[i * Stride + BlueIndexOffset] = //b;
-													GammaCorrect(BlueGamma, b);
 	}
 
-	hid_send_feature_report(Device, ColorBuffer, BufferSize);
+	const auto Color = ImageSummarizer.GetColor();
+
+	constexpr int Stride = 3;
+	constexpr int GreenIndexOffset = 2;
+	ColorBuffer[Index * Stride + GreenIndexOffset] = GammaCorrect(Config.GammaG, (int)Color.G);
+
+	constexpr int RedIndexOffset = 3;
+	ColorBuffer[Index * Stride + RedIndexOffset] = GammaCorrect(Config.GammaR, (int)Color.R);
+
+	constexpr int BlueIndexOffset = 4;
+	ColorBuffer[Index * Stride + BlueIndexOffset] = GammaCorrect(Config.GammaB, (int)Color.B);
 }
 
 void AmbientLightStrip::ClearBuffer()
 {
-	//TODO: start after the buffer header. not hard-coded 2
-	for (unsigned int i = 2; i < BufferSize; ++i)
-	{
-		ColorBuffer[i] = 0;
-	}
+	//TODO: update this so it skips the first 2 indices, then we don't need to go back and set 0 and 1 later
+	memset(ColorBuffer, 0, BufferSize * sizeof(unsigned char));
+
+	constexpr unsigned char ReportId = 8;
+	ColorBuffer[0] = ReportId;
+	constexpr unsigned char Channel = 0;
+	ColorBuffer[1] = Channel;
 }
 
