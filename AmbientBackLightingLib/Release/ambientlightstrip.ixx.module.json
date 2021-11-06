@@ -1,0 +1,14 @@
+{
+    "Version": "1.1",
+    "Data": {
+        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklightinglib\\ambientlightstrip.ixx",
+        "ProvidedModule": "AmbientBackLighting.AmbientLightStrip",
+        "ImportedModules": [
+            "AmbientBackLighting.ScreenSampleInfo",
+            "AmbientBackLighting.ImageSummarizer",
+            "AmbientBackLighting.Config",
+            "std.core"
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

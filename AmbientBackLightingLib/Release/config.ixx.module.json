@@ -1,0 +1,9 @@
+{
+    "Version": "1.1",
+    "Data": {
+        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklightinglib\\config.ixx",
+        "ProvidedModule": "AmbientBackLighting.Config",
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

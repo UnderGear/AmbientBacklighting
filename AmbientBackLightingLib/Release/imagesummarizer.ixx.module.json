@@ -1,0 +1,12 @@
+{
+    "Version": "1.1",
+    "Data": {
+        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklightinglib\\imagesummarizer.ixx",
+        "ProvidedModule": "AmbientBackLighting.ImageSummarizer",
+        "ImportedModules": [
+            "AmbientBackLighting.Color",
+            "std.core"
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

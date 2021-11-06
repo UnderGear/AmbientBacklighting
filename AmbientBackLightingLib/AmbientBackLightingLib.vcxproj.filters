@@ -15,58 +15,34 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AmbientBackLighting.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="hidapi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AmbientLightStrip.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ScreenSampleInfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageSummarizer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dllmain.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Color.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="AmbientBackLighting.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="AmbientBackLighting.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="AmbientLightStrip.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="AmbientLightStrip.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="WindowData.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Config.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="ImageSummarizer.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="ImageSummarizer.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="Color.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="ScreenSampleInfo.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowData.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

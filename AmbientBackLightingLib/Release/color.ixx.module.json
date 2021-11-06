@@ -1,0 +1,11 @@
+{
+    "Version": "1.1",
+    "Data": {
+        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklightinglib\\color.ixx",
+        "ProvidedModule": "AmbientBackLighting.Color",
+        "ImportedModules": [
+            "std.core"
+        ],
+        "ImportedHeaderUnits": []
+    }
+}
