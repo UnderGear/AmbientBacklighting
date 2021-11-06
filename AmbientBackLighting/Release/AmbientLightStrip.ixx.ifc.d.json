@@ -1,10 +1,10 @@
 {
     "Version": "1.1",
     "Data": {
-        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklightinglib\\ambientlightstrip.ixx",
+        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklighting\\ambientlightstrip.ixx",
         "ProvidedModule": "AmbientBackLighting.AmbientLightStrip",
         "Includes": [
-            "d:\\projects\\c++\\ambientbacklighting\\ambientbacklightinglib\\hidapi.h",
+            "d:\\projects\\c++\\ambientbacklighting\\ambientbacklighting\\hidapi.h",
             "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\wchar.h",
             "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\corecrt.h",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\professional\\vc\\tools\\msvc\\14.29.30133\\include\\vcruntime.h",
@@ -253,15 +253,15 @@
         "ImportedModules": [
             {
                 "Name": "AmbientBackLighting.ScreenSampleInfo",
-                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLightingLib\\Release\\ScreenSampleInfo.ixx.ifc"
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\ScreenSampleInfo.ixx.ifc"
             },
             {
                 "Name": "AmbientBackLighting.ImageSummarizer",
-                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLightingLib\\Release\\ImageSummarizer.ixx.ifc"
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\ImageSummarizer.ixx.ifc"
             },
             {
                 "Name": "AmbientBackLighting.Config",
-                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLightingLib\\Release\\Config.ixx.ifc"
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\Config.ixx.ifc"
             },
             {
                 "Name": "std.core",
@@ -269,7 +269,7 @@
             },
             {
                 "Name": "AmbientBackLighting.Color",
-                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLightingLib\\Release\\Color.ixx.ifc"
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\Color.ixx.ifc"
             }
         ],
         "ImportedHeaderUnits": []

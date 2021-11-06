@@ -1,7 +1,7 @@
 {
     "Version": "1.1",
     "Data": {
-        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklightinglib\\config.ixx",
+        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklighting\\config.ixx",
         "ProvidedModule": "AmbientBackLighting.Config",
         "Includes": [
             "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\wchar.h",

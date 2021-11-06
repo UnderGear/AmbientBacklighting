@@ -1,7 +1,7 @@
 {
     "Version": "1.1",
     "Data": {
-        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklightinglib\\screensampleinfo.ixx",
+        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklighting\\screensampleinfo.ixx",
         "ProvidedModule": "AmbientBackLighting.ScreenSampleInfo",
         "Includes": [],
         "ImportedModules": [],

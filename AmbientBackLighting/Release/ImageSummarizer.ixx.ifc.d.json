@@ -1,13 +1,13 @@
 {
     "Version": "1.1",
     "Data": {
-        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklightinglib\\imagesummarizer.ixx",
+        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklighting\\imagesummarizer.ixx",
         "ProvidedModule": "AmbientBackLighting.ImageSummarizer",
         "Includes": [],
         "ImportedModules": [
             {
                 "Name": "AmbientBackLighting.Color",
-                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLightingLib\\Release\\Color.ixx.ifc"
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\Color.ixx.ifc"
             },
             {
                 "Name": "std.core",

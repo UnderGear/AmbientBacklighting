@@ -1,8 +1,8 @@
 {
     "Version": "1.1",
     "Data": {
-        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklightinglib\\windowdata.ixx",
-        "ProvidedModule": "AmbientBackLighting.WindowData",
+        "Source": "d:\\projects\\c++\\ambientbacklighting\\ambientbacklighting\\ambientbacklighting.ixx",
+        "ProvidedModule": "AmbientBackLighting.BackLighting",
         "Includes": [
             "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\um\\windows.h",
             "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\shared\\winapifamily.h",
@@ -236,12 +236,48 @@
             "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\um\\winsvc.h",
             "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\um\\mcx.h",
             "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\um\\imm.h",
-            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\um\\ime_cmodes.h"
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\um\\ime_cmodes.h",
+            "d:\\projects\\c++\\ambientbacklighting\\ambientbacklighting\\hidapi.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\wchar.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\corecrt_wconio.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\corecrt_stdio_config.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\corecrt_wdirect.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\corecrt_wio.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\corecrt_share.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\corecrt_wprocess.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\corecrt_wstdio.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\corecrt_wtime.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\sys\\stat.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\sys\\types.h"
         ],
         "ImportedModules": [
             {
+                "Name": "AmbientBackLighting.Config",
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\Config.ixx.ifc"
+            },
+            {
+                "Name": "AmbientBackLighting.WindowData",
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\WindowData.ixx.ifc"
+            },
+            {
+                "Name": "AmbientBackLighting.ImageSummarizer",
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\ImageSummarizer.ixx.ifc"
+            },
+            {
+                "Name": "AmbientBackLighting.AmbientLightStrip",
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\AmbientLightStrip.ixx.ifc"
+            },
+            {
                 "Name": "std.core",
                 "BMI": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\VC\\Tools\\MSVC\\14.29.30133\\ifc\\x86\\release\\std.core.ifc"
+            },
+            {
+                "Name": "AmbientBackLighting.Color",
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\Color.ixx.ifc"
+            },
+            {
+                "Name": "AmbientBackLighting.ScreenSampleInfo",
+                "BMI": "D:\\Projects\\C++\\AmbientBackLighting\\AmbientBackLighting\\Release\\ScreenSampleInfo.ixx.ifc"
             }
         ],
         "ImportedHeaderUnits": []
