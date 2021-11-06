@@ -6,3 +6,6 @@ Debug/*
 *.obj
 *.idb
 *.pdb
+*.exe
+*.exp
+*.lib
