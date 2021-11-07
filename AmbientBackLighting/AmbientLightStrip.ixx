@@ -10,56 +10,49 @@ import std.core;
 
 export namespace ABL
 {
-	struct LightData
-	{
-		std::size_t LightIndex = 0;
-		std::size_t SampleStartX = 0;
-		std::size_t SampleEndX = 0;
-		std::size_t SampleStartY = 0;
-		std::size_t SampleEndY = 0;
-
-		constexpr LightData(std::size_t InLightIndex, const ABL::ScreenSampleInfo& SampleInfo, std::size_t Spacing)
-			: LightIndex(InLightIndex)
-		{
-			SampleStartX = SampleInfo.IsVertical ? 0 : Spacing * LightIndex;
-			SampleEndX = SampleInfo.IsVertical ? SampleInfo.SampleWidth : SampleStartX + Spacing;
-			SampleStartY = SampleInfo.IsVertical ? Spacing * LightIndex : 0;
-			SampleEndY = SampleInfo.IsVertical ? SampleStartY + Spacing : SampleInfo.SampleHeight;
-		}
-	};
-
 	class AmbientLightStrip
 	{
 		hid_device* Device;
 
-		std::vector<LightData> Lights;
-
-		std::size_t BufferSize;
 		unsigned char* ColorBuffer;
 
+		const ABL::LightStripInfo& LightInfo;
 		ABL::ScreenSampleInfo SampleInfo;
+		std::vector<ABL::LightSampleInfo> Lights;
+
 		RGBQUAD* ScreenSample;
 		BITMAPINFO BitmapInfo;
 
 	public:
 		AmbientLightStrip(
-			hid_device* InDevice, std::size_t LightCount, std::size_t InBufferSize, ABL::ScreenSampleInfo InSampleInfo)
-			: Device(InDevice), BufferSize(InBufferSize), SampleInfo(InSampleInfo)
+			hid_device* InDevice, const ABL::LightStripInfo& InLightInfo, std::size_t ScreenWidth, std::size_t ScreenHeight, std::size_t SampleThickness)
+			: Device(InDevice), LightInfo(InLightInfo)
 		{
-			const auto Spacing = SampleInfo.IsVertical ? SampleInfo.SampleHeight / LightCount : SampleInfo.SampleWidth / LightCount;
 
-			Lights.reserve(LightCount);
-			for (std::size_t LightIndex = 0; LightIndex < LightCount; ++LightIndex)
+			auto IsVertical = LightInfo.Alignment == ABL::LightStripAlignment::Left || LightInfo.Alignment == ABL::LightStripAlignment::Right;
+			SampleInfo = ABL::ScreenSampleInfo
+			{// is vertical, width, height, offset x, offset y
+				IsVertical,
+				IsVertical ? SampleThickness : ScreenWidth,
+				IsVertical ? ScreenHeight : SampleThickness,
+				LightInfo.Alignment == ABL::LightStripAlignment::Right ? ScreenWidth - SampleThickness : 0,
+				LightInfo.Alignment == ABL::LightStripAlignment::Bottom ? ScreenHeight - SampleThickness : 0
+			};
+
+			//TODO: spacing doesn't necessarily get us across the screen evenly.
+			const auto Spacing = SampleInfo.IsVertical
+				? static_cast<float>(SampleInfo.SampleHeight) / LightInfo.LightCount
+				: static_cast<float>(SampleInfo.SampleWidth) / LightInfo.LightCount;
+
+			Lights.reserve(LightInfo.LightCount);
+			for (std::size_t LightIndex = 0; LightIndex < LightInfo.LightCount; ++LightIndex)
 			{
 				Lights.emplace_back(LightIndex, SampleInfo, Spacing);
 			}
 
-			//TODO: report ID, maybe channel should come from the device config.
-			ColorBuffer = new unsigned char[BufferSize];
-			constexpr unsigned char ReportId = 8;
-			ColorBuffer[0] = ReportId;
-			constexpr unsigned char Channel = 0;
-			ColorBuffer[1] = Channel;
+			ColorBuffer = new unsigned char[LightInfo.BufferSize];
+			ColorBuffer[0] = LightInfo.ReportId;
+			ColorBuffer[1] = LightInfo.Channel;
 
 			ScreenSample = new RGBQUAD[SampleInfo.SampleWidth * SampleInfo.SampleHeight];
 			BitmapInfo = { 0 };
@@ -77,7 +70,7 @@ export namespace ABL
 
 			//send one last message to clear out the LED strip
 			ClearBuffer();
-			hid_send_feature_report(Device, ColorBuffer, BufferSize);
+			hid_send_feature_report(Device, ColorBuffer, LightInfo.BufferSize);
 
 			delete[] ColorBuffer;
 			hid_close(Device);
@@ -95,7 +88,7 @@ export namespace ABL
 			}
 
 			//tell the LED strip what color its lights should be
-			hid_send_feature_report(Device, ColorBuffer, BufferSize);
+			hid_send_feature_report(Device, ColorBuffer, LightInfo.BufferSize);
 		}
 
 	private:
@@ -116,16 +109,18 @@ export namespace ABL
 			DeleteObject(CaptureBitmap);
 		}
 
-		void UpdateLight(ABL::IImageSummarizer& ImageSummarizer, const ABL::Config& Config, const LightData& Light)
+		void UpdateLight(ABL::IImageSummarizer& ImageSummarizer, const ABL::Config& Config, const ABL::LightSampleInfo& Light)
 		{
-			//TODO: can we use ranges somehow to eliminate these raw for loops?
+			// add the color of every pixel in our screen sample associated with this light to our image summarizer
 			for (auto x = Light.SampleStartX; x <= Light.SampleEndX; ++x)
 			{
 				for (auto y = Light.SampleStartY; y <= Light.SampleEndY; ++y)
 				{
-					const auto SampleIndex = x + y * SampleInfo.SampleWidth;
-					const auto& Sample = ScreenSample[SampleIndex];
-					ImageSummarizer.AddSample({ Sample.rgbRed, Sample.rgbGreen, Sample.rgbBlue }); //TODO: this is expensive. we're calling the ctor here.
+					const auto SampleIndex = x + y * SampleInfo.SampleWidth; // 2D -> 1D array index conversion
+					const auto& SamplePixel = ScreenSample[SampleIndex];
+					ImageSummarizer.AddSample({ SamplePixel.rgbRed, SamplePixel.rgbGreen, SamplePixel.rgbBlue });
+					//TODO: this is expensive. we're calling the ctor here for a color.
+					//TODO: we're also having to use the vtable to make this call. gross. I guess we could use CRTP if we really wanted?
 				}
 			}
 
@@ -163,7 +158,7 @@ export namespace ABL
 			// clear the buffer except for the report id and channel info at the front
 			constexpr std::size_t BufferHeaderSize = 2;
 			constexpr auto BufferItemSize = sizeof(unsigned char);
-			memset(ColorBuffer, BufferHeaderSize, BufferSize * BufferItemSize - BufferHeaderSize);
+			memset(ColorBuffer, BufferHeaderSize, LightInfo.BufferSize * BufferItemSize - BufferHeaderSize);
 		}
 	};
 }

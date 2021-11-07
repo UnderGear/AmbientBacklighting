@@ -94,27 +94,15 @@ export namespace ABL
 
 			//ImageSummarizer = new AverageLUVImageSummarizer();
 
-
 			auto nScreenWidth = static_cast<std::size_t>(GetSystemMetrics(SM_CXSCREEN));
 			auto nScreenHeight = static_cast<std::size_t>(GetSystemMetrics(SM_CYSCREEN));
-
-			//TODO: report ID should probably come from the library, based on the # of lights in config
 
 			//TODO: monitor devices, update these as necessary
 			for (auto& LightInfo : AppConfig.Lights)
 			{
-				if (auto* Device = hid_open(LightInfo.vendor_id, LightInfo.product_id, LightInfo.serial))
+				if (auto* Device = hid_open(LightInfo.VendorId, LightInfo.ProductId, LightInfo.Serial))
 				{
-					auto IsVertical = LightInfo.alignment == ABL::LightStripAlignment::Left || LightInfo.alignment == ABL::LightStripAlignment::Right;
-					auto SampleInfo = ABL::ScreenSampleInfo
-					{// is vertical, width, height, offset x, offset y
-						IsVertical,
-						IsVertical ? AppConfig.SampleThickness : nScreenWidth,
-						IsVertical ? nScreenHeight : AppConfig.SampleThickness,
-						LightInfo.alignment == ABL::LightStripAlignment::Right ? nScreenWidth - AppConfig.SampleThickness : 0,
-						LightInfo.alignment == ABL::LightStripAlignment::Bottom ? nScreenHeight - AppConfig.SampleThickness : 0
-					};
-					LightStrips.push_back(std::make_unique<ABL::AmbientLightStrip>(Device, LightInfo.light_count, LightInfo.buffer_size, SampleInfo));
+					LightStrips.push_back(std::make_unique<ABL::AmbientLightStrip>(Device, LightInfo, nScreenWidth, nScreenHeight, AppConfig.SampleThickness));
 				}
 			}
 		};

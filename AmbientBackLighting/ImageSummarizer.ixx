@@ -18,6 +18,9 @@ export namespace ABL
 		virtual ABL::ColorRGB GetAverageColor() const = 0;
 	};
 
+
+	//TODO: for efficiency, let's stop using our color structs. why call ctors when we just want 3 channels?
+
 	class RGBSampler : public IColorSampler
 	{
 		unsigned long R = 0;

@@ -16,15 +16,17 @@ export namespace ABL
 
 	struct LightStripInfo
 	{
-		unsigned short vendor_id = 0;
-		unsigned short product_id = 0;
-		const wchar_t* serial;
-		std::size_t buffer_size = 0; //TODO: we should be able to derive this...
+		unsigned short VendorId = 0;
+		unsigned short ProductId = 0;
+		unsigned char ReportId = 8; //TODO: could maybe be derived from light count?
+		unsigned char Channel = 0;
+		const wchar_t* Serial;
+		std::size_t BufferSize = 0; //TODO: we should be able to derive this...
 		//TODO: also figure out how the buffer's report id and channel should be set.
 
-		std::size_t light_count = 0;
+		std::size_t LightCount = 0;
 
-		LightStripAlignment alignment = LightStripAlignment::Top;
+		LightStripAlignment Alignment = LightStripAlignment::Top;
 	};
 
 	struct Config
@@ -32,9 +34,9 @@ export namespace ABL
 		//TODO: we have GOT to get rid of this random math in here. it's more or less the size of the buffer?
 		LightStripInfo Lights[3] =
 		{
-			{0x20a0, 0x41e5, L"BS021580-3.1", 2 + 3 * 32, 25, LightStripAlignment::Top},
-			{0x20a0, 0x41e5, L"BS021630-3.1", 2 + 3 * 32, 11, LightStripAlignment::Left},
-			{0x20a0, 0x41e5, L"BS021581-3.1", 2 + 3 * 32, 11, LightStripAlignment::Right}
+			{0x20a0, 0x41e5, 8, 0, L"BS021580-3.1", 2 + 3 * 32, 25, LightStripAlignment::Top},
+			{0x20a0, 0x41e5, 8, 0, L"BS021630-3.1", 2 + 3 * 32, 11, LightStripAlignment::Left},
+			{0x20a0, 0x41e5, 8, 0, L"BS021581-3.1", 2 + 3 * 32, 11, LightStripAlignment::Right}
 		};
 
 		std::size_t SampleThickness = 30; //width in pixels of our rectangular samples
