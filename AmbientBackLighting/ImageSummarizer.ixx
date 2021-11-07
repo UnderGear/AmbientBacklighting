@@ -2,6 +2,8 @@ export module AmbientBackLighting.ImageSummarizer;
 import AmbientBackLighting.Color;
 import std.core;
 
+//TODO: I think this is a good file to start considering C++20 concepts
+
 export namespace ABL
 {
 	class IColorSampler
@@ -62,9 +64,9 @@ export namespace ABL
 			{
 				return
 				{
-					(unsigned long)std::sqrt(R / SampleCount),
-					(unsigned long)std::sqrt(G / SampleCount),
-					(unsigned long)std::sqrt(B / SampleCount)
+					static_cast<unsigned long>(std::sqrt(R / SampleCount)),
+					static_cast<unsigned long>(std::sqrt(G / SampleCount)),
+					static_cast<unsigned long>(std::sqrt(B / SampleCount))
 				};
 			}
 			else

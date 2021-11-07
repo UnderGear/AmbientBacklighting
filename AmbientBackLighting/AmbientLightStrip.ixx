@@ -8,31 +8,51 @@ import AmbientBackLighting.ImageSummarizer;
 import AmbientBackLighting.Config;
 import std.core;
 
-int GammaCorrect(float Gamma, int Index)
-{
-	constexpr float Min = 0.f;
-	constexpr float Max = 255.f;
-
-	//corrected value is (Index/255)^Gamma * Max + 0.5
-	auto Value = std::pow(Index / Max, Gamma) * Max + 0.5f;
-
-	//clamp to the range [0, 255]
-	Value = std::clamp(Value, Min, Max);
-
-	//round to the nearest integer
-	return (int)Value;
-}
-
 export namespace ABL
 {
+	struct LightData
+	{
+		std::size_t LightIndex = 0;
+		std::size_t SampleStartX = 0;
+		std::size_t SampleEndX = 0;
+		std::size_t SampleStartY = 0;
+		std::size_t SampleEndY = 0;
+
+		constexpr LightData(std::size_t InLightIndex, const ABL::ScreenSampleInfo& SampleInfo, std::size_t Spacing)
+			: LightIndex(InLightIndex)
+		{
+			SampleStartX = SampleInfo.IsVertical ? 0 : Spacing * LightIndex;
+			SampleEndX = SampleInfo.IsVertical ? SampleInfo.SampleWidth : SampleStartX + Spacing;
+			SampleStartY = SampleInfo.IsVertical ? Spacing * LightIndex : 0;
+			SampleEndY = SampleInfo.IsVertical ? SampleStartY + Spacing : SampleInfo.SampleHeight;
+		}
+	};
+
 	class AmbientLightStrip
 	{
+		hid_device* Device;
+
+		std::vector<LightData> Lights;
+
+		std::size_t BufferSize;
+		unsigned char* ColorBuffer;
+
+		ABL::ScreenSampleInfo SampleInfo;
+		RGBQUAD* ScreenSample;
+		BITMAPINFO BitmapInfo;
+
 	public:
 		AmbientLightStrip(
-			hid_device* InDevice, std::size_t InLightCount, std::size_t InBufferSize, ABL::ScreenSampleInfo InSampleInfo)
-			: Device(InDevice), LightCount(InLightCount), BufferSize(InBufferSize), SampleInfo(InSampleInfo)
+			hid_device* InDevice, std::size_t LightCount, std::size_t InBufferSize, ABL::ScreenSampleInfo InSampleInfo)
+			: Device(InDevice), BufferSize(InBufferSize), SampleInfo(InSampleInfo)
 		{
-			Spacing = SampleInfo.IsVertical ? SampleInfo.SampleHeight / LightCount : SampleInfo.SampleWidth / LightCount;
+			const auto Spacing = SampleInfo.IsVertical ? SampleInfo.SampleHeight / LightCount : SampleInfo.SampleWidth / LightCount;
+
+			Lights.reserve(LightCount);
+			for (std::size_t LightIndex = 0; LightIndex < LightCount; ++LightIndex)
+			{
+				Lights.emplace_back(LightIndex, SampleInfo, Spacing);
+			}
 
 			//TODO: report ID, maybe channel should come from the device config.
 			ColorBuffer = new unsigned char[BufferSize];
@@ -63,33 +83,24 @@ export namespace ABL
 			hid_close(Device);
 		}
 
-		void Update(HWND& Window, IImageSummarizer& ImageSummarizer, const ABL::Config& Config)
+		void Update(HWND& Window, ABL::IImageSummarizer& ImageSummarizer, const ABL::Config& Config)
 		{
 			//take a snip of the screen for this strip
 			UpdateScreenSample(Window);
 
 			//calculate the summarized color for each light
-			for (std::size_t i = 0; i < LightCount; ++i)
+			for (const auto& Light : Lights)
 			{
-				UpdateLightAtIndex(i, ImageSummarizer, Config);
+				UpdateLight(ImageSummarizer, Config, Light);
 			}
 
 			//tell the LED strip what color its lights should be
 			hid_send_feature_report(Device, ColorBuffer, BufferSize);
 		}
-	protected:
 
-		hid_device* Device;
-		std::size_t LightCount;
-		std::size_t Spacing;
+	private:
 
-		std::size_t BufferSize;
-		unsigned char* ColorBuffer;
-
-		ScreenSampleInfo SampleInfo;
-		RGBQUAD* ScreenSample;
-		BITMAPINFO BitmapInfo;
-
+		//TODO: compare this approach of sampling only the desired sections of the screen per light strip vs sampling the full screen once for all
 		void UpdateScreenSample(HWND& Window)
 		{
 			auto WindowDC = GetWindowDC(Window);
@@ -105,18 +116,12 @@ export namespace ABL
 			DeleteObject(CaptureBitmap);
 		}
 
-		void UpdateLightAtIndex(std::size_t LightIndex, ABL::IImageSummarizer& ImageSummarizer, const ABL::Config& Config)
+		void UpdateLight(ABL::IImageSummarizer& ImageSummarizer, const ABL::Config& Config, const LightData& Light)
 		{
-			//TODO: I think all of these calculations should be handled before we even get to this point.
-			//TODO: it should all be pre-calculated during construction
-			const auto SampleStartX = SampleInfo.IsVertical ? 0 : Spacing * LightIndex;
-			const auto SampleEndX = SampleInfo.IsVertical ? SampleInfo.SampleWidth : SampleStartX + Spacing;
-			const auto SampleStartY = SampleInfo.IsVertical ? Spacing * LightIndex : 0;
-			const auto SampleEndY = SampleInfo.IsVertical ? SampleStartY + Spacing : SampleInfo.SampleHeight;
-
-			for (auto x = SampleStartX; x <= SampleEndX; ++x)
+			//TODO: can we use ranges somehow to eliminate these raw for loops?
+			for (auto x = Light.SampleStartX; x <= Light.SampleEndX; ++x)
 			{
-				for (auto y = SampleStartY; y <= SampleEndY; ++y)
+				for (auto y = Light.SampleStartY; y <= Light.SampleEndY; ++y)
 				{
 					const auto SampleIndex = x + y * SampleInfo.SampleWidth;
 					const auto& Sample = ScreenSample[SampleIndex];
@@ -127,24 +132,38 @@ export namespace ABL
 			const auto Color = ImageSummarizer.GetColor();
 			ImageSummarizer.ClearSamples();
 
-			//TODO: we really have to kill off these conversions and use the right types. the hardware expects unsigned chars.
-			// that's basically 1 byte per color channel.
 			constexpr std::size_t Stride = 3;
-			constexpr std::size_t GreenIndexOffset = 2; // this is after the buffer header.
-			ColorBuffer[LightIndex * Stride + GreenIndexOffset] = GammaCorrect(Config.GammaG, (int)Color.G); //TODO: again, gross c-style casts
+			constexpr std::size_t GreenIndexOffset = 2; // this is after the buffer header's 2 entries.
+			ColorBuffer[Light.LightIndex * Stride + GreenIndexOffset] = GammaCorrect(Config.GammaG, Color.G);
 
 			constexpr std::size_t RedIndexOffset = 3;
-			ColorBuffer[LightIndex * Stride + RedIndexOffset] = GammaCorrect(Config.GammaR, (int)Color.R);
+			ColorBuffer[Light.LightIndex * Stride + RedIndexOffset] = GammaCorrect(Config.GammaR, Color.R);
 
 			constexpr std::size_t BlueIndexOffset = 4;
-			ColorBuffer[LightIndex * Stride + BlueIndexOffset] = GammaCorrect(Config.GammaB, (int)Color.B);
+			ColorBuffer[Light.LightIndex * Stride + BlueIndexOffset] = GammaCorrect(Config.GammaB, Color.B);
+		}
+
+		unsigned char GammaCorrect(float Gamma, unsigned long RawValue)
+		{
+			constexpr float Min = 0.f;
+			constexpr float Max = 255.f;
+
+			//corrected value is (Index/255)^Gamma * Max + 0.5
+			auto CorrectedValue = std::pow(RawValue / Max, Gamma) * Max + 0.5f;
+
+			//clamp to the range [0, 255]
+			CorrectedValue = std::clamp(CorrectedValue, Min, Max);
+
+			//round to the nearest integer
+			return static_cast<unsigned char>(CorrectedValue);
 		}
 
 		void ClearBuffer()
 		{
 			// clear the buffer except for the report id and channel info at the front
 			constexpr std::size_t BufferHeaderSize = 2;
-			memset(ColorBuffer, BufferHeaderSize, BufferSize * sizeof(unsigned char) - BufferHeaderSize);
+			constexpr auto BufferItemSize = sizeof(unsigned char);
+			memset(ColorBuffer, BufferHeaderSize, BufferSize * BufferItemSize - BufferHeaderSize);
 		}
 	};
 }

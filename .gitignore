@@ -16,3 +16,4 @@ Debug/*
 *.ifc.d.json
 *.module.json
 *.cpp.json
+*.ixx.ifc.dt.*
