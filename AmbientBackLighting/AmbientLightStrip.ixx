@@ -97,7 +97,6 @@ export namespace ABL
 
 	private:
 
-		//TODO: compare this approach of sampling only the desired sections of the screen per light strip vs sampling the full screen once for all
 		void UpdateScreenSample(HWND& Window)
 		{
 			auto WindowDC = GetWindowDC(Window);
