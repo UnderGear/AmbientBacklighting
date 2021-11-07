@@ -19,10 +19,9 @@ export namespace ABL
 		unsigned short VendorId = 0;
 		unsigned short ProductId = 0;
 		unsigned char ReportId = 8; //TODO: could maybe be derived from light count?
-		unsigned char Channel = 0;
+		unsigned char Channel = 0; //TODO: how should this actually be set?
 		const wchar_t* Serial;
-		std::size_t BufferSize = 0; //TODO: we should be able to derive this...
-		//TODO: also figure out how the buffer's report id and channel should be set.
+		std::size_t BufferSize = 0; //TODO: we should be able to derive this from light count too, right?
 
 		std::size_t LightCount = 0;
 
@@ -31,7 +30,7 @@ export namespace ABL
 
 	struct Config
 	{
-		//TODO: we have GOT to get rid of this random math in here. it's more or less the size of the buffer?
+		//TODO: we have GOT to get rid of this random buffer size math in here
 		LightStripInfo Lights[3] =
 		{
 			{0x20a0, 0x41e5, 8, 0, L"BS021580-3.1", 2 + 3 * 32, 25, LightStripAlignment::Top},

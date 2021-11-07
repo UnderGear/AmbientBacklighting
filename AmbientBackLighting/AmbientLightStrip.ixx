@@ -12,14 +12,19 @@ export namespace ABL
 {
 	class AmbientLightStrip
 	{
+		// Physical device for the light strip
 		hid_device* Device;
-
+		// Buffer for writing to the device
 		unsigned char* ColorBuffer;
 
+		// Light config data
 		const ABL::LightStripInfo& LightInfo;
+		// Sample data for this light strip
 		ABL::ScreenSampleInfo SampleInfo;
+		// Sample data per light in this strip
 		std::vector<ABL::LightSampleInfo> Lights;
 
+		// Screen sample
 		RGBQUAD* ScreenSample;
 		BITMAPINFO BitmapInfo;
 
@@ -28,10 +33,10 @@ export namespace ABL
 			hid_device* InDevice, const ABL::LightStripInfo& InLightInfo, std::size_t ScreenWidth, std::size_t ScreenHeight, std::size_t SampleThickness)
 			: Device(InDevice), LightInfo(InLightInfo)
 		{
-
-			auto IsVertical = LightInfo.Alignment == ABL::LightStripAlignment::Left || LightInfo.Alignment == ABL::LightStripAlignment::Right;
+			const auto IsVertical = LightInfo.Alignment == ABL::LightStripAlignment::Left || LightInfo.Alignment == ABL::LightStripAlignment::Right;
 			SampleInfo = ABL::ScreenSampleInfo
-			{// is vertical, width, height, offset x, offset y
+			{
+				// is vertical, width, height, offset x, offset y
 				IsVertical,
 				IsVertical ? SampleThickness : ScreenWidth,
 				IsVertical ? ScreenHeight : SampleThickness,
@@ -39,7 +44,6 @@ export namespace ABL
 				LightInfo.Alignment == ABL::LightStripAlignment::Bottom ? ScreenHeight - SampleThickness : 0
 			};
 
-			//TODO: spacing doesn't necessarily get us across the screen evenly.
 			const auto Spacing = SampleInfo.IsVertical
 				? static_cast<float>(SampleInfo.SampleHeight) / LightInfo.LightCount
 				: static_cast<float>(SampleInfo.SampleWidth) / LightInfo.LightCount;
