@@ -9,3 +9,10 @@ Debug/*
 *.exe
 *.exp
 *.lib
+*.recipe
+*.iobj
+*.ipdb
+*.ifc
+*.ifc.d.json
+*.module.json
+*.ifc
