@@ -202,9 +202,6 @@
     <ClCompile Include="ScreenSampleInfo.ixx">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClCompile Include="WindowData.ixx">
-      <FileType>Document</FileType>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

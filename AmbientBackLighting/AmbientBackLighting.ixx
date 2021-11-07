@@ -4,7 +4,6 @@ module;
 
 export module AmbientBackLighting.BackLighting;
 import AmbientBackLighting.Config;
-import AmbientBackLighting.WindowData;
 import AmbientBackLighting.ImageSummarizer;
 import AmbientBackLighting.AmbientLightStrip;
 import std.core;
@@ -17,15 +16,6 @@ export namespace ABL
 		void Update()
 		{
 			auto Window = GetDesktopWindow();
-
-			//WindowSelector.Update();
-
-			//if (WindowSelector.HasValidSelection())
-				//Window = WindowSelector.GetSelectedWindow();
-
-			//TODO: remove this after testing.
-			//Window = GetForegroundWindow();
-
 
 			for (auto& Light : LightStrips)
 			{
@@ -132,7 +122,6 @@ export namespace ABL
 	protected:
 
 		ABL::Config AppConfig;
-		ABL::WindowSelector WindowSelector;
 		std::unique_ptr<ABL::IImageSummarizer> ImageSummarizer;
 		std::vector<std::unique_ptr<ABL::AmbientLightStrip>> LightStrips;
 	};

@@ -15,4 +15,4 @@ Debug/*
 *.ifc
 *.ifc.d.json
 *.module.json
-*.ifc
+*.cpp.json
