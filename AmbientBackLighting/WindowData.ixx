@@ -1,8 +1,8 @@
 module;
 #include <windows.h>
-import std.core;
 
 export module AmbientBackLighting.WindowData;
+import std.core;
 
 export namespace ABL
 {

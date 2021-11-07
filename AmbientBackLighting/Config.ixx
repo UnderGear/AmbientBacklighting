@@ -1,8 +1,8 @@
 module;
-
 #include <wchar.h>
 
 export module AmbientBackLighting.Config;
+import std.core;
 
 export namespace ABL
 {
@@ -19,10 +19,10 @@ export namespace ABL
 		unsigned short vendor_id = 0;
 		unsigned short product_id = 0;
 		const wchar_t* serial;
-		size_t buffer_size = 0; //TODO: we should be able to derive this...
+		std::size_t buffer_size = 0; //TODO: we should be able to derive this...
 		//TODO: also figure out how the buffer's report id and channel should be set.
 
-		unsigned int light_count = 0;
+		std::size_t light_count = 0;
 
 		LightStripAlignment alignment = LightStripAlignment::Top;
 	};
@@ -37,8 +37,7 @@ export namespace ABL
 			{0x20a0, 0x41e5, L"BS021581-3.1", 2 + 3 * 32, 11, LightStripAlignment::Right}
 		};
 
-		int SampleThickness = 30; //width in pixels of our rectangular samples
-		unsigned long SamplesPerSecond = 120;// 60;
+		std::size_t SampleThickness = 30; //width in pixels of our rectangular samples
 
 		//old gamma values from main game playthrough: (G: 2.4, R: 1.9, B: 3.4)
 		//initial B&W playthrough gamma values: (G: 1.9, R: 1.5, B: 2.7)

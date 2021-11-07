@@ -1,9 +1,6 @@
-module;
-
+export module AmbientBackLighting.ImageSummarizer;
 import AmbientBackLighting.Color;
 import std.core;
-
-export module AmbientBackLighting.ImageSummarizer;
 
 export namespace ABL
 {

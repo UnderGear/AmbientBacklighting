@@ -1,13 +1,12 @@
 module;
-
 #include "hidapi.h"
 #include <windows.h>
+
+export module AmbientBackLighting.AmbientLightStrip;
 import AmbientBackLighting.ScreenSampleInfo;
 import AmbientBackLighting.ImageSummarizer;
 import AmbientBackLighting.Config;
 import std.core;
-
-export module AmbientBackLighting.AmbientLightStrip;
 
 int GammaCorrect(float Gamma, int Index)
 {
@@ -30,7 +29,7 @@ export namespace ABL
 	{
 	public:
 		AmbientLightStrip(
-			hid_device* InDevice, int InLightCount, size_t InBufferSize, ABL::ScreenSampleInfo InSampleInfo)
+			hid_device* InDevice, std::size_t InLightCount, std::size_t InBufferSize, ABL::ScreenSampleInfo InSampleInfo)
 			: Device(InDevice), LightCount(InLightCount), BufferSize(InBufferSize), SampleInfo(InSampleInfo)
 		{
 			Spacing = SampleInfo.IsVertical ? SampleInfo.SampleHeight / LightCount : SampleInfo.SampleWidth / LightCount;
@@ -43,13 +42,13 @@ export namespace ABL
 			ColorBuffer[1] = Channel;
 
 			ScreenSample = new RGBQUAD[SampleInfo.SampleWidth * SampleInfo.SampleHeight];
-			BMI = { 0 };
-			BMI.bmiHeader.biSize = sizeof(BMI.bmiHeader);
-			BMI.bmiHeader.biWidth = SampleInfo.SampleWidth;
-			BMI.bmiHeader.biHeight = SampleInfo.SampleHeight;
-			BMI.bmiHeader.biPlanes = 1;
-			BMI.bmiHeader.biBitCount = 32;
-			BMI.bmiHeader.biCompression = BI_RGB;
+			BitmapInfo = { 0 };
+			BitmapInfo.bmiHeader.biSize = sizeof(BitmapInfo.bmiHeader);
+			BitmapInfo.bmiHeader.biWidth = SampleInfo.SampleWidth;
+			BitmapInfo.bmiHeader.biHeight = SampleInfo.SampleHeight;
+			BitmapInfo.bmiHeader.biPlanes = 1;
+			BitmapInfo.bmiHeader.biBitCount = 32;
+			BitmapInfo.bmiHeader.biCompression = BI_RGB;
 		}
 
 		~AmbientLightStrip()
@@ -70,7 +69,7 @@ export namespace ABL
 			UpdateScreenSample(Window);
 
 			//calculate the summarized color for each light
-			for (auto i = 0; i < LightCount; ++i)
+			for (std::size_t i = 0; i < LightCount; ++i)
 			{
 				UpdateLightAtIndex(i, ImageSummarizer, Config);
 			}
@@ -81,15 +80,15 @@ export namespace ABL
 	protected:
 
 		hid_device* Device;
-		int LightCount;
-		int Spacing;
+		std::size_t LightCount;
+		std::size_t Spacing;
 
-		size_t BufferSize;
+		std::size_t BufferSize;
 		unsigned char* ColorBuffer;
 
 		ScreenSampleInfo SampleInfo;
 		RGBQUAD* ScreenSample;
-		BITMAPINFO BMI;
+		BITMAPINFO BitmapInfo;
 
 		void UpdateScreenSample(HWND& Window)
 		{
@@ -99,54 +98,53 @@ export namespace ABL
 
 			SelectObject(CaptureDC, CaptureBitmap);
 			BitBlt(CaptureDC, 0, 0, SampleInfo.SampleWidth, SampleInfo.SampleHeight, WindowDC, SampleInfo.SampleOffsetX, SampleInfo.SampleOffsetY, SRCCOPY | CAPTUREBLT);
-			GetDIBits(CaptureDC, CaptureBitmap, 0, SampleInfo.SampleHeight, ScreenSample, &BMI, DIB_RGB_COLORS);
+			GetDIBits(CaptureDC, CaptureBitmap, 0, SampleInfo.SampleHeight, ScreenSample, &BitmapInfo, DIB_RGB_COLORS);
 
 			ReleaseDC(Window, WindowDC);
 			DeleteDC(CaptureDC);
 			DeleteObject(CaptureBitmap);
 		}
 
-		void UpdateLightAtIndex(int Index, ABL::IImageSummarizer& ImageSummarizer, const ABL::Config& Config)
+		void UpdateLightAtIndex(std::size_t LightIndex, ABL::IImageSummarizer& ImageSummarizer, const ABL::Config& Config)
 		{
 			//TODO: I think all of these calculations should be handled before we even get to this point.
 			//TODO: it should all be pre-calculated during construction
-			const auto SampleStartX = SampleInfo.IsVertical ? 0 : Spacing * Index;
+			const auto SampleStartX = SampleInfo.IsVertical ? 0 : Spacing * LightIndex;
 			const auto SampleEndX = SampleInfo.IsVertical ? SampleInfo.SampleWidth : SampleStartX + Spacing;
-			const auto SampleStartY = SampleInfo.IsVertical ? Spacing * Index : 0;
+			const auto SampleStartY = SampleInfo.IsVertical ? Spacing * LightIndex : 0;
 			const auto SampleEndY = SampleInfo.IsVertical ? SampleStartY + Spacing : SampleInfo.SampleHeight;
 
-			for (int x = SampleStartX; x <= SampleEndX; ++x)
+			for (auto x = SampleStartX; x <= SampleEndX; ++x)
 			{
-				for (int y = SampleStartY; y <= SampleEndY; ++y)
+				for (auto y = SampleStartY; y <= SampleEndY; ++y)
 				{
 					const auto SampleIndex = x + y * SampleInfo.SampleWidth;
 					const auto& Sample = ScreenSample[SampleIndex];
-					ImageSummarizer.AddSample({ Sample.rgbRed, Sample.rgbGreen, Sample.rgbBlue });
+					ImageSummarizer.AddSample({ Sample.rgbRed, Sample.rgbGreen, Sample.rgbBlue }); //TODO: this is expensive. we're calling the ctor here.
 				}
 			}
 
 			const auto Color = ImageSummarizer.GetColor();
+			ImageSummarizer.ClearSamples();
 
-			constexpr int Stride = 3;
-			constexpr int GreenIndexOffset = 2;
-			ColorBuffer[Index * Stride + GreenIndexOffset] = GammaCorrect(Config.GammaG, (int)Color.G);
+			//TODO: we really have to kill off these conversions and use the right types. the hardware expects unsigned chars.
+			// that's basically 1 byte per color channel.
+			constexpr std::size_t Stride = 3;
+			constexpr std::size_t GreenIndexOffset = 2; // this is after the buffer header.
+			ColorBuffer[LightIndex * Stride + GreenIndexOffset] = GammaCorrect(Config.GammaG, (int)Color.G); //TODO: again, gross c-style casts
 
-			constexpr int RedIndexOffset = 3;
-			ColorBuffer[Index * Stride + RedIndexOffset] = GammaCorrect(Config.GammaR, (int)Color.R);
+			constexpr std::size_t RedIndexOffset = 3;
+			ColorBuffer[LightIndex * Stride + RedIndexOffset] = GammaCorrect(Config.GammaR, (int)Color.R);
 
-			constexpr int BlueIndexOffset = 4;
-			ColorBuffer[Index * Stride + BlueIndexOffset] = GammaCorrect(Config.GammaB, (int)Color.B);
+			constexpr std::size_t BlueIndexOffset = 4;
+			ColorBuffer[LightIndex * Stride + BlueIndexOffset] = GammaCorrect(Config.GammaB, (int)Color.B);
 		}
 
 		void ClearBuffer()
 		{
-			//TODO: update this so it skips the first 2 indices, then we don't need to go back and set 0 and 1 later
-			memset(ColorBuffer, 0, BufferSize * sizeof(unsigned char));
-
-			constexpr unsigned char ReportId = 8;
-			ColorBuffer[0] = ReportId;
-			constexpr unsigned char Channel = 0;
-			ColorBuffer[1] = Channel;
+			// clear the buffer except for the report id and channel info at the front
+			constexpr std::size_t BufferHeaderSize = 2;
+			memset(ColorBuffer, BufferHeaderSize, BufferSize * sizeof(unsigned char) - BufferHeaderSize);
 		}
 	};
 }

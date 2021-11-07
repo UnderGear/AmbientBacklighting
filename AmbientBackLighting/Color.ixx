@@ -1,7 +1,5 @@
-module;
-import std.core;
-
 export module AmbientBackLighting.Color;
+import std.core;
 
 export namespace ABL
 {

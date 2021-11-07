@@ -1,14 +1,13 @@
 module;
-
 #include <windows.h>
 #include "hidapi.h"
+
+export module AmbientBackLighting.BackLighting;
 import AmbientBackLighting.Config;
 import AmbientBackLighting.WindowData;
 import AmbientBackLighting.ImageSummarizer;
 import AmbientBackLighting.AmbientLightStrip;
 import std.core;
-
-export module AmbientBackLighting.BackLighting;
 
 export namespace ABL
 {
@@ -31,8 +30,6 @@ export namespace ABL
 			for (auto& Light : LightStrips)
 			{
 				Light->Update(Window, *ImageSummarizer, AppConfig);
-				//don't trust the light to clear the samples, I guess.
-				ImageSummarizer->ClearSamples();
 			}
 
 			//TODO: do we want to do some HID monitoring in here? if we find one we're looking for, create it?
@@ -108,32 +105,29 @@ export namespace ABL
 			//ImageSummarizer = new AverageLUVImageSummarizer();
 
 
-			auto nScreenWidth = GetSystemMetrics(SM_CXSCREEN);
-			auto nScreenHeight = GetSystemMetrics(SM_CYSCREEN);
+			auto nScreenWidth = static_cast<std::size_t>(GetSystemMetrics(SM_CXSCREEN));
+			auto nScreenHeight = static_cast<std::size_t>(GetSystemMetrics(SM_CYSCREEN));
 
 			//TODO: report ID should probably come from the library, based on the # of lights in config
 
 			//TODO: monitor devices, update these as necessary
-
 			for (auto& LightInfo : AppConfig.Lights)
 			{
 				if (auto* Device = hid_open(LightInfo.vendor_id, LightInfo.product_id, LightInfo.serial))
 				{
 					auto IsVertical = LightInfo.alignment == ABL::LightStripAlignment::Left || LightInfo.alignment == ABL::LightStripAlignment::Right;
 					auto SampleInfo = ABL::ScreenSampleInfo
-					{
+					{// is vertical, width, height, offset x, offset y
 						IsVertical,
-						(int)(IsVertical ? AppConfig.SampleThickness : nScreenWidth),
-						(int)(IsVertical ? nScreenHeight : AppConfig.SampleThickness),
-						(int)(LightInfo.alignment == ABL::LightStripAlignment::Right ? nScreenWidth - AppConfig.SampleThickness : 0),
-						(int)(LightInfo.alignment == ABL::LightStripAlignment::Bottom ? nScreenHeight - AppConfig.SampleThickness : 0)
+						IsVertical ? AppConfig.SampleThickness : nScreenWidth,
+						IsVertical ? nScreenHeight : AppConfig.SampleThickness,
+						LightInfo.alignment == ABL::LightStripAlignment::Right ? nScreenWidth - AppConfig.SampleThickness : 0,
+						LightInfo.alignment == ABL::LightStripAlignment::Bottom ? nScreenHeight - AppConfig.SampleThickness : 0
 					};
-					LightStrips.push_back(std::make_unique<AmbientLightStrip>(Device, LightInfo.light_count, LightInfo.buffer_size, SampleInfo));
+					LightStrips.push_back(std::make_unique<ABL::AmbientLightStrip>(Device, LightInfo.light_count, LightInfo.buffer_size, SampleInfo));
 				}
 			}
 		};
-
-		unsigned long GetRefreshMilliseconds() const { return 1000 / AppConfig.SamplesPerSecond; }
 
 	protected:
 
