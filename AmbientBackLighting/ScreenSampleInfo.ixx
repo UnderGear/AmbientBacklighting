@@ -5,11 +5,11 @@ export namespace ABL
 {
 	struct ScreenSampleInfo
 	{
-		bool IsVertical = false;
 		std::size_t SampleWidth = 0;
 		std::size_t SampleHeight = 0;
 		std::size_t SampleOffsetX = 0;
 		std::size_t SampleOffsetY = 0;
+		bool IsVertical = false;
 	};
 
 	struct LightSampleInfo
@@ -20,13 +20,17 @@ export namespace ABL
 		std::size_t SampleStartY = 0;
 		std::size_t SampleEndY = 0;
 
-		constexpr LightSampleInfo(std::size_t InLightIndex, const ABL::ScreenSampleInfo& SampleInfo, float Spacing)
+		constexpr LightSampleInfo(std::size_t InLightIndex, const ABL::ScreenSampleInfo& SampleInfo, std::size_t SampleThickness, std::size_t Padding)
 			: LightIndex(InLightIndex)
 		{
-			SampleStartX = SampleInfo.IsVertical ? 0 : static_cast<std::size_t>(std::round(Spacing * LightIndex));
-			SampleEndX = SampleInfo.IsVertical ? SampleInfo.SampleWidth : static_cast<std::size_t>(std::round(SampleStartX + Spacing));
-			SampleStartY = SampleInfo.IsVertical ? static_cast<std::size_t>(std::round(Spacing * LightIndex)) : 0;
-			SampleEndY = SampleInfo.IsVertical ? static_cast<std::size_t>(std::round(SampleStartY + Spacing)) : SampleInfo.SampleHeight;
+			// the full spacing taken up per light is: pad, sample, pad. we want N spacings plus another padding to get to our sample at this index
+			auto StartOffset = LightIndex * (SampleThickness + Padding * 2) + Padding;
+			auto EndOffset = StartOffset + SampleThickness;
+
+			SampleStartX = SampleInfo.IsVertical ? 0 : StartOffset;
+			SampleEndX = SampleInfo.IsVertical ? SampleInfo.SampleWidth : EndOffset;
+			SampleStartY = SampleInfo.IsVertical ? StartOffset : 0;
+			SampleEndY = SampleInfo.IsVertical ? EndOffset : SampleInfo.SampleHeight;
 		}
 	};
 }

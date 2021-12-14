@@ -23,9 +23,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Color.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="AmbientBackLighting.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -39,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="ScreenSampleInfo.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Profiler.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

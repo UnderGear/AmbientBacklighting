@@ -1,0 +1,57 @@
+ABL
+
+which args should we use to eliminate implicit conversions?
+ -Wconversion
+-std=c++20 -Wpedantic -Wall -Wextra -Wconversion -Weverything -Wsign-conversion -O3
+
+
+Frame Profiler Results:
+ - AmbientLightStrip::UpdateScreenSample: CallCount: 3, Total Duration: 0.0198214s
+ - ImageSummarizer::AddSample: CallCount: 197749, Total Duration: 0.0183392s
+ - AmbientLightStrip::UpdateLight: CallCount: 47, Total Duration: 0.0632668s
+ - AmbientLightStrip::Update: CallCount: 3, Total Duration: 0.12674s
+
+same code, just commented out some profiles
+looks like the profiler itself is costly. maybe that map lookup?
+Frame Profiler Results:
+ - AmbientLightStrip::Update: CallCount: 3, Total Duration: 0.0735464s
+
+updated code to remove the string_view lookup in the map
+Frame Profiler Results:
+ - 1: Profile Name: AmbientLightStrip::UpdateScreenSample, CallCount: 3, Total Duration: 0.0211775s
+ - 4: Profile Name: ImageSummarizer::AddSample, CallCount: 197749, Total Duration: 0.0114813s
+ - 2: Profile Name: AmbientLightStrip::UpdateLight, CallCount: 47, Total Duration: 0.040766s
+ - 0: Profile Name: AmbientLightStrip::Update, CallCount: 3, Total Duration: 0.106659s
+
+same updated code, removed some entries
+Frame Profiler Results:
+ - 1: Profile Name: AmbientLightStrip::UpdateScreenSample, CallCount: 3, Total Duration: 0.0190952s
+ - 4: Profile Name: ImageSummarizer::AddSample, CallCount: 197749, Total Duration: 0.0166936s
+ - 2: Profile Name: AmbientLightStrip::UpdateLight, CallCount: 47, Total Duration: 0.0410535s
+ - 0: Profile Name: AmbientLightStrip::Update, CallCount: 3, Total Duration: 0.105203s
+
+reduced width from 30 to 25
+Frame Profiler Results:
+Profile Name: AmbientLightStrip::UpdateScreenSample, CallCount: 3, Total Duration: 0.0204557s
+Profile Name: ImageSummarizer::AddSample, CallCount: 165854, Total Duration: 0.0153476s
+Profile Name: AmbientLightStrip::UpdateLight, CallCount: 47, Total Duration: 0.0333568s
+Profile Name: AmbientLightStrip::Update, CallCount: 3, Total Duration: 0.098567s
+
+reduced the sample to a square of 25x25 right where the light itself is (hopefully)
+Frame Profiler Results:
+Profile Name: AmbientLightStrip::UpdateScreenSample, CallCount: 3, Total Duration: 0.0276172s
+Profile Name: ImageSummarizer::AddSample, CallCount: 31772, Total Duration: 0.003009s
+Profile Name: AmbientLightStrip::UpdateLight, CallCount: 47, Total Duration: 0.0064827s
+Profile Name: AmbientLightStrip::Update, CallCount: 3, Total Duration: 0.0783604s
+
+same code, without extra logging
+Frame Profiler Results:
+Profile Name: AmbientLightStrip::Update, CallCount: 3, Total Duration: 0.0736s
+
+perf ideas:
+ - fix up some more perf issues with the profiler itself. a constexpr hash would be good for the name
+ - per-light screen samples?
+ - parallelize some of this. parallel light strips, parallel individual lights, parallel add pixel samples?
+   - use some of the parallel algorithm/ranges libraries? use coroutines?
+     - sample?
+   - refactor to a more DOD style approach?

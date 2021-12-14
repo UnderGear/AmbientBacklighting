@@ -4,7 +4,6 @@ module;
 
 export module AmbientBackLighting.BackLighting;
 import AmbientBackLighting.Config;
-import AmbientBackLighting.ImageSummarizer;
 import AmbientBackLighting.AmbientLightStrip;
 import std.core;
 
@@ -15,11 +14,9 @@ export namespace ABL
 	public:
 		void Update()
 		{
-			auto Window = GetDesktopWindow();
-
 			for (auto& Light : LightStrips)
 			{
-				Light->Update(Window, *ImageSummarizer, AppConfig);
+				Light->Update(AppConfig);
 			}
 
 			//TODO: do we want to do some HID monitoring in here? if we find one we're looking for, create it?
@@ -75,34 +72,17 @@ export namespace ABL
 			AppConfig = Config{};
 			//TODO: let's pass in CL args or read from a config file and populate our config struct that way.;
 
-			/*std::vector<Color> Seeds
-			{
-				{0, 255, 255}, //aqua
-				{255, 0, 0}, //red
-				{0, 255, 0}, //green
-				{0, 0, 255}, //blue
-				{255, 255, 255}, //white
-				{255, 0, 255}, //purple
-				{255, 255, 0}, //yellow
-				{0, 0, 0}, //black
-			};
-			ImageSummarizer = new VoronoiImageSummarizer{ Seeds };*/
+			const auto ScreenWidth = static_cast<std::size_t>(GetSystemMetrics(SM_CXSCREEN));
+			const auto ScreenHeight = static_cast<std::size_t>(GetSystemMetrics(SM_CYSCREEN));
 
-			//TODO: it'd be good to have an enum in the config that tells us which implementation to use.
-			constexpr auto UseRootMeanSquare = true;
-			ImageSummarizer = std::make_unique<ABL::AverageImageSummarizer>(UseRootMeanSquare);
-
-			//ImageSummarizer = new AverageLUVImageSummarizer();
-
-			auto nScreenWidth = static_cast<std::size_t>(GetSystemMetrics(SM_CXSCREEN));
-			auto nScreenHeight = static_cast<std::size_t>(GetSystemMetrics(SM_CYSCREEN));
+			auto Window = GetDesktopWindow();
 
 			//TODO: monitor devices, update these as necessary
 			for (auto& LightInfo : AppConfig.Lights)
 			{
 				if (auto* Device = hid_open(LightInfo.VendorId, LightInfo.ProductId, LightInfo.Serial))
 				{
-					LightStrips.push_back(std::make_unique<ABL::AmbientLightStrip>(Device, LightInfo, nScreenWidth, nScreenHeight, AppConfig.SampleThickness));
+					LightStrips.push_back(std::make_unique<ABL::AmbientLightStrip>(Window, Device, LightInfo, ScreenWidth, ScreenHeight, AppConfig.SampleThickness));
 				}
 			}
 		};
@@ -110,7 +90,6 @@ export namespace ABL
 	protected:
 
 		ABL::Config AppConfig;
-		std::unique_ptr<ABL::IImageSummarizer> ImageSummarizer;
-		std::vector<std::unique_ptr<ABL::AmbientLightStrip>> LightStrips;
+		std::vector<std::unique_ptr<ABL::AmbientLightStrip>> LightStrips; //TODO: I'd rather just use raw values instead of pointers
 	};
 }

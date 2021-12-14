@@ -1,5 +1,6 @@
 module;
 #include <wchar.h>
+#include "immintrin.h"
 
 export module AmbientBackLighting.Config;
 import std.core;
@@ -38,14 +39,18 @@ export namespace ABL
 			{0x20a0, 0x41e5, 8, 0, L"BS021581-3.1", 2 + 3 * 32, 11, LightStripAlignment::Right}
 		};
 
-		std::size_t SampleThickness = 30; //width in pixels of our rectangular samples
+		std::size_t SampleThickness = 25; //width in pixels of our rectangular samples
 
 		//old gamma values from main game playthrough: (G: 2.4, R: 1.9, B: 3.4)
 		//initial B&W playthrough gamma values: (G: 1.9, R: 1.5, B: 2.7)
 
-		float GammaG = 2.05f;
-		float GammaR = 1.8f;
-		float GammaB = 2.5f;
+		double GammaG = 2.05;
+		double GammaR = 1.8;
+		double GammaB = 2.5;
+
+		__m256d Gammas;
+
+		Config() : Gammas{ _mm256_set_pd(GammaR, GammaB, GammaG, 0.0) } { }
 	};
 
 }

@@ -1,6 +1,8 @@
 .vs/
 Debug/*
+Release/*
 */Debug/*
+*/Release/*
 *.log
 *.tlog
 *.obj
@@ -16,4 +18,4 @@ Debug/*
 *.ifc.d.json
 *.module.json
 *.cpp.json
-*.ixx.ifc.dt.*
+*.ixx.ifc.dt*
