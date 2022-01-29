@@ -86,8 +86,7 @@ export namespace ABL
 			delete[] ScreenSample;
 
 			//send one last message to clear out the LED strip
-			ClearBuffer();
-			hid_send_feature_report(Device, ColorBuffer, LightInfo.BufferSize);
+			Disable();
 
 			delete[] ColorBuffer;
 			hid_close(Device);
@@ -95,6 +94,12 @@ export namespace ABL
 			ReleaseDC(Window, WindowDC);
 			DeleteDC(CaptureDC);
 			DeleteObject(CaptureBitmap);
+		}
+
+		void Disable()
+		{
+			ClearBuffer();
+			hid_send_feature_report(Device, ColorBuffer, LightInfo.BufferSize);
 		}
 
 		void Update(const ABL::Config& Config)

@@ -87,9 +87,22 @@ export namespace ABL
 			}
 		};
 
+		void DisableLights()
+		{
+			if (AreLightsEnabled == false)
+				return;
+
+			AreLightsEnabled = false;
+			for (auto& LightStrip : LightStrips)
+			{
+				LightStrip->Disable();
+			}
+		}
+
 	protected:
 
 		ABL::Config AppConfig;
 		std::vector<std::unique_ptr<ABL::AmbientLightStrip>> LightStrips; //TODO: I'd rather just use raw values instead of pointers
+		bool AreLightsEnabled = true;
 	};
 }
