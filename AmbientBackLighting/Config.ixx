@@ -50,7 +50,7 @@ export namespace ABL
 
 		__m256d Gammas;
 
-		Config() : Gammas{ _mm256_set_pd(GammaR, GammaB, GammaG, 0.0) } { }
+		Config() : Gammas{ _mm256_set_pd(GammaR, GammaG, GammaB, 0.0) } { }
 	};
 
 }

@@ -55,3 +55,8 @@ perf ideas:
    - use some of the parallel algorithm/ranges libraries? use coroutines?
      - sample?
    - refactor to a more DOD style approach?
+
+with SIMD
+Frame Profiler Results:
+Profile Name: AmbientLightStrip::UpdateLight, CallCount: 47, Total Duration: 0.001595s
+

@@ -152,24 +152,26 @@ export namespace ABL
 			{
 				//Profiler::StackFrameProfile StackFrame = { "AmbientLightStrip::UpdateLight - Update Buffer", 6 };
 				constexpr std::size_t Stride = 3;
-				constexpr std::size_t GreenIndexOffset = 2; // this is after the buffer header's 2 entries.
-				//TODO: pull some constexpr values out for the indices in the m256d_f64 for our colors
-				ColorBuffer[Light.LightIndex * Stride + GreenIndexOffset] = static_cast<unsigned char>(Color.m256d_f64[2]);
+				constexpr std::size_t GreenBufferOffset = 2; // this is after the buffer header's 2 entries.
+				constexpr std::size_t GreenChannelIndex = 2;
+				ColorBuffer[Light.LightIndex * Stride + GreenBufferOffset] = static_cast<unsigned char>(Color.m256d_f64[GreenChannelIndex]);
 
-				constexpr std::size_t RedIndexOffset = 3;
-				ColorBuffer[Light.LightIndex * Stride + RedIndexOffset] = static_cast<unsigned char>(Color.m256d_f64[3]);
+				constexpr std::size_t RedBufferOffset = 3;
+				constexpr std::size_t RedChannelIndex = 3;
+				ColorBuffer[Light.LightIndex * Stride + RedBufferOffset] = static_cast<unsigned char>(Color.m256d_f64[RedChannelIndex]);
 
-				constexpr std::size_t BlueIndexOffset = 4;
-				ColorBuffer[Light.LightIndex * Stride + BlueIndexOffset] = static_cast<unsigned char>(Color.m256d_f64[1]);
+				constexpr std::size_t BlueBufferOffset = 4;
+				constexpr std::size_t BlueChannelIndex = 1;
+				ColorBuffer[Light.LightIndex * Stride + BlueBufferOffset] = static_cast<unsigned char>(Color.m256d_f64[BlueChannelIndex]);
 			}
 		}
 
 		void ClearBuffer()
 		{
 			// clear the buffer except for the report id and channel info at the front
-			constexpr std::size_t BufferHeaderSize = 2;
-			constexpr auto BufferItemSize = sizeof(unsigned char);
-			memset(ColorBuffer, BufferHeaderSize, LightInfo.BufferSize * BufferItemSize - BufferHeaderSize);
+			memset(ColorBuffer, 0, LightInfo.BufferSize);
+			ColorBuffer[0] = LightInfo.ReportId;
+			ColorBuffer[1] = LightInfo.Channel;
 		}
 	};
 }

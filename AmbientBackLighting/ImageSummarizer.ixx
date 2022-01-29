@@ -34,7 +34,7 @@ export namespace ABL
 			}
 			else
 			{
-				Value = _mm256_add_pd(Value, SourceColor);
+				Value = _mm256_add_pd(SourceColor, Value);
 			}
 
 			++SampleCount;
