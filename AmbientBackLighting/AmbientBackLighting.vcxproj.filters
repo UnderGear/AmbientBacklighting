@@ -15,10 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="hidapi.h">
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="ftd2xx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libMPSSE_spi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -29,7 +32,7 @@
     <ClCompile Include="AmbientBackLighting.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="AmbientLightStrip.ixx">
+    <ClCompile Include="AmbientLightStripSegment.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="Config.ixx">
@@ -44,6 +47,9 @@
     <ClCompile Include="Profiler.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="Light.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="AmbientBackLighting.rc">
@@ -54,5 +60,9 @@
     <Image Include="icon1.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\ABL.txt" />
+    <Text Include="..\README.txt" />
   </ItemGroup>
 </Project>

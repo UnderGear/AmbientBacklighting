@@ -92,7 +92,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\hidapi\hidapi;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Sync</ExceptionHandling>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <EnableModules>true</EnableModules>
@@ -116,19 +116,22 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <ExceptionHandling>false</ExceptionHandling>
+      <ExceptionHandling>Sync</ExceptionHandling>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeaderFile />
       <FloatingPointModel />
-      <AdditionalModuleDependencies>AmbientBackLighting</AdditionalModuleDependencies>
-      <AdditionalIncludeDirectories>..\..\hidapi\hidapi;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalModuleDependencies>
+      </AdditionalModuleDependencies>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableModules>true</EnableModules>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libMPSSE.lib;ftd2xx.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -188,7 +191,7 @@
     <ClCompile Include="AmbientBackLighting.ixx">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClCompile Include="AmbientLightStrip.ixx">
+    <ClCompile Include="AmbientLightStripSegment.ixx">
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Include="ImageSummarizer.ixx">
@@ -197,11 +200,13 @@
     <ClCompile Include="Config.ixx">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClInclude Include="hidapi.h" />
+    <ClInclude Include="ftd2xx.h" />
+    <ClCompile Include="Light.ixx" />
     <ClCompile Include="Profiler.ixx" />
     <ClCompile Include="ScreenSampleInfo.ixx">
       <FileType>Document</FileType>
     </ClCompile>
+    <ClInclude Include="libMPSSE_spi.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -212,6 +217,10 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\ABL.txt" />
+    <Text Include="..\README.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

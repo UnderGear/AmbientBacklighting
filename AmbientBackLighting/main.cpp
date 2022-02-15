@@ -12,6 +12,8 @@ constexpr UINT TrayMessage = WM_APP;
 constexpr UINT ExitMessage = TrayMessage + 1;
 
 //Disgusting global state so the winproc can actually work
+//TODO: I'm considering pulling the windows crap into its own class that holds a unique ptr to a backlighting
+// and the windows instance can be a gross raw pointer we new and delete in here.
 NOTIFYICONDATA NotifyData = { sizeof(NotifyData) };
 auto IsScreenOn = true;
 auto IsRunning = true;
@@ -41,7 +43,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLi
 
 		//TODO: read from config for our refresh rate again.
 		// 1 count of a duration that is 1/120 seconds long
-		constexpr auto SleepDuration = std::chrono::duration<double, std::ratio<1, 120>> { 1 };
+		constexpr auto SleepDuration = std::chrono::duration<double, std::ratio<1, 120>>{ 1 };
 		std::this_thread::sleep_for(SleepDuration);
 
 		MSG Message;

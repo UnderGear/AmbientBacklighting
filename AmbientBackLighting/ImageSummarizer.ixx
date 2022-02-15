@@ -52,10 +52,9 @@ export namespace ABL
 			return GammaCorrect(Result, Gammas);
 		}
 
-		inline static const double MinColorValue = 0.0;
-		inline static const double MaxColorValue = 255.0;
-		inline static const double Half = 0.5;
-		inline static const __m256d Mins = _mm256_set1_pd(MinColorValue);
+		static constexpr double MinColorValue = 0.0;
+		static constexpr double MaxColorValue = 255.0;
+		static constexpr double Half = 0.5;
 		inline static const __m256d Maxes = _mm256_set1_pd(MaxColorValue);
 		inline static const __m256d Halves = _mm256_set1_pd(Half);
 
@@ -66,8 +65,6 @@ export namespace ABL
 			//corrected value is (Index/255)^Gamma * Max + 0.5
 			auto CorrectedValues = _mm256_pow_pd(_mm256_div_pd(RawValues, Maxes), Gammas);
 			CorrectedValues = _mm256_macc_pd(CorrectedValues, Maxes, Halves);
-
-			//TODO: clamp to the range [0, 255]?
 
 			return CorrectedValues;
 		}
