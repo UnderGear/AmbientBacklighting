@@ -35,9 +35,9 @@ export namespace ABL
 		LightStripWindingDirection Winding = LightStripWindingDirection::LeftToRight;
 		std::vector<LightStripInfo> LightSegments =
 		{
-			{ LightSampleAlignment::Left, 12 }, //TODO: 48 per side
-			{ LightSampleAlignment::Top, 120 },
-			{ LightSampleAlignment::Right, 12 } //TODO: sample from top to bottom!
+			{ LightSampleAlignment::Left, 48 },
+			{ LightSampleAlignment::Top, 117 },
+			{ LightSampleAlignment::Right, 48 },
 		};
 
 		auto GetTotalLightCount() const
@@ -55,13 +55,14 @@ export namespace ABL
 		//initial B&W playthrough gamma values: (G: 1.9, R: 1.5, B: 2.7)
 
 		//Global brightness to use, will be clamped to the interval [0, 31]
-		std::uint8_t Brightness = 0x1;
+		std::uint8_t Brightness = 10;
 
-		double GammaG = 2.05;
-		double GammaR = 1.8;
-		double GammaB = 2.5;
+		//2.2 is apparently a good baseline
+		double GammaG = 2.6; //2.05
+		double GammaR = 2.2; //1.8
+		double GammaB = 2.7; //2.5
 
-		__m256d Gammas;
+		__m256d Gammas{ 0 };
 
 		Config() : Gammas{ _mm256_set_pd(GammaR, GammaG, GammaB, 0.0) } { }
 	};
