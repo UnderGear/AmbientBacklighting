@@ -22,7 +22,7 @@ export namespace ABL
 			Value = _mm256_set1_pd(0.0);
 			SampleCount = 0;
 		}
-	
+
 		uint64_t GetSampleCount() const { return SampleCount; }
 
 		void AddSample(double R, double G, double B)

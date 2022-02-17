@@ -55,7 +55,7 @@ export namespace ABL
 		//initial B&W playthrough gamma values: (G: 1.9, R: 1.5, B: 2.7)
 
 		//Global brightness to use, will be clamped to the interval [0, 31]
-		std::uint8_t Brightness = 10;
+		std::uint8_t Brightness = 10; //10 seems like a solid night time value, 20 for daytime?
 
 		//2.2 is apparently a good baseline
 		double GammaG = 2.6; //2.05

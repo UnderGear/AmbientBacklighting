@@ -12,6 +12,7 @@ export namespace ABL
 {
 	class AmbientBackLighting
 	{
+		//TODO: we've got this in a couple of places. just read it from config?
 		static constexpr std::uint8_t MaxBrightness = 0b00011111; // 31
 
 		ABL::Config AppConfig;
@@ -48,6 +49,8 @@ export namespace ABL
 	public:
 		void Update()
 		{
+			AreLightsEnabled = true;
+
 			for (auto& LightSegment : LightStripSegments)
 			{
 				LightSegment->Update(AppConfig);
