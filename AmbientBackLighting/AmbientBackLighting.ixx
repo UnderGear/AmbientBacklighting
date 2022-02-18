@@ -16,7 +16,7 @@ export namespace ABL
 		static constexpr std::uint8_t MaxBrightness = 0b00011111; // 31
 
 		ABL::Config AppConfig;
-		std::vector<std::unique_ptr<ABL::AmbientLightStripSegment>> LightStripSegments;
+		std::vector<ABL::AmbientLightStripSegment> LightStripSegments;
 		std::uint8_t Brightness = MaxBrightness;
 		bool AreLightsEnabled = true;
 		FT_HANDLE ftHandle;
@@ -51,10 +51,10 @@ export namespace ABL
 		{
 			AreLightsEnabled = true;
 
-			for (auto& LightSegment : LightStripSegments)
+			std::for_each(std::execution::par_unseq, LightStripSegments.begin(), LightStripSegments.end(), [&](auto& LightStripSegment)
 			{
-				LightSegment->Update(AppConfig);
-			}
+				LightStripSegment.Update(AppConfig);
+			});
 
 			FlushBuffer();
 		}
@@ -83,7 +83,7 @@ export namespace ABL
 			FT_DEVICE_LIST_INFO_NODE DeviceInfo{ 0 };
 			uint32 ChannelCount = 0;
 			auto Status = SPI_GetNumChannels(&ChannelCount);
-			for (uint32 i = 0; i < ChannelCount; ++i)
+			for (uint32 i = 0; i < ChannelCount; ++i) //TODO: can we move this to some sort of algo, maybe backed by ranges?
 			{
 				Status = SPI_GetChannelInfo(i, &DeviceInfo);
 
@@ -110,6 +110,7 @@ export namespace ABL
 			// Skip bytes for the start frame. We've zero-filled that in our resize.
 			// Similarly, our end frame is zero-filled as well.
 			std::size_t Index = StartFrameByteCount;
+			LightStripSegments.reserve(AppConfig.LightSegments.size());
 			for (auto& LightSegmentInfo : AppConfig.LightSegments)
 			{
 				std::size_t StartIndex = Index;
@@ -121,7 +122,7 @@ export namespace ABL
 
 				// Create a span into the buffer for this light segment
 				std::span SegmentSpan{ BufferSpan.subspan(StartIndex, EndIndex - StartIndex) };
-				LightStripSegments.push_back(std::make_unique<ABL::AmbientLightStripSegment>(Window, LightSegmentInfo, SegmentSpan, ScreenWidth, ScreenHeight, AppConfig.SampleThickness));
+				LightStripSegments.emplace_back(Window, LightSegmentInfo, SegmentSpan, ScreenWidth, ScreenHeight, AppConfig.SampleThickness);
 			}
 
 			SetBrightness(AppConfig.Brightness);
@@ -143,10 +144,10 @@ export namespace ABL
 
 			AreLightsEnabled = false;
 
-			for (auto& LightSegment : LightStripSegments)
+			std::for_each(std::execution::par_unseq, LightStripSegments.begin(), LightStripSegments.end(), [&](auto& LightStripSegment)
 			{
-				LightSegment->ClearBuffer();
-			}
+				LightStripSegment.ClearBuffer();
+			});
 
 			FlushBuffer();
 		}
@@ -159,10 +160,10 @@ export namespace ABL
 
 			Brightness = ClampedNewBrightness;
 
-			for (auto& LightSegment : LightStripSegments)
+			std::for_each(std::execution::par_unseq, LightStripSegments.begin(), LightStripSegments.end(), [&](auto& LightStripSegment)
 			{
-				LightSegment->SetBrightness(Brightness);
-			}
+				LightStripSegment.SetBrightness(Brightness);
+			});
 		}
 	};
 }
