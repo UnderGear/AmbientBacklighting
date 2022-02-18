@@ -12,13 +12,6 @@ export namespace ABL
 {
 	class AmbientBackLighting
 	{
-		//TODO: we've got this in a couple of places. just read it from config?
-		static constexpr std::uint8_t MaxBrightness = 0b00011111; // 31
-
-		ABL::Config AppConfig;
-		std::vector<ABL::AmbientLightStripSegment> LightStripSegments;
-		std::uint8_t Brightness = MaxBrightness;
-		bool AreLightsEnabled = true;
 		FT_HANDLE ftHandle;
 
 		// The data to send to the LED strip
@@ -39,6 +32,14 @@ export namespace ABL
 		//  - at least n/2 bits of 0x0s (or 0x1s, just don't mix and match)
 		std::vector<std::uint8_t> Buffer;
 
+		//TODO: we've got this in a couple of places. just read it from config?
+		static constexpr std::uint8_t MaxBrightness = 0b00011111; // 31
+
+		ABL::Config AppConfig;
+		std::vector<ABL::AmbientLightStripSegment> LightStripSegments;
+		std::uint8_t Brightness = MaxBrightness;
+		bool AreLightsEnabled = true;
+
 		// Send our Buffer's current value over the wire to the LED strip
 		void FlushBuffer()
 		{
@@ -51,6 +52,10 @@ export namespace ABL
 		{
 			AreLightsEnabled = true;
 
+// 			std::for_each(std::execution::par_unseq, LightStripSegments.begin(), LightStripSegments.end(), [&](auto& LightSegment)
+// 			{
+// 				LightSegment.Update(AppConfig);
+// 			});
 			for (auto& LightSegment : LightStripSegments)
 			{
 				LightSegment.Update(AppConfig);
