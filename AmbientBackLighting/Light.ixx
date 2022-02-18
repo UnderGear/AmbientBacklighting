@@ -13,6 +13,8 @@ export namespace ABL
 	static constexpr std::size_t RedChannelIndex = 2;
 	static constexpr std::size_t GreenChannelIndex = 3;
 
+	static constexpr std::uint8_t HeaderTopBits = 0b11100000;
+
 	struct LightSampleInfo
 	{
 		std::span<uint8_t> BufferSpan;
@@ -50,8 +52,10 @@ export namespace ABL
 			BufferSpan[GreenChannelIndex] = static_cast<std::uint8_t>(Color.m256d_f64[GreenChannelIndex]);
 		}
 
-		void SetHeader(uint8_t Header)
+		void SetBrightness(uint8_t NewBrightness)
 		{
+			// Color headers are composed of a required 3 1 bits followed by 5 brightness bits
+			auto Header = HeaderTopBits | NewBrightness;
 			BufferSpan[HeaderChannelIndex] = Header;
 		}
 

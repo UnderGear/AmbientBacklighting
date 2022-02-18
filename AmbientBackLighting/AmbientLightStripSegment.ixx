@@ -17,8 +17,6 @@ export namespace ABL
 		// The span only exposes the subset of the buffer's bytes this segment should actually be able to access
 		std::span<uint8_t> BufferSpan;
 
-		static constexpr std::uint8_t HeaderTopBits = 0b11100000;
-
 		// Light config data
 		const ABL::LightStripInfo& LightInfo;
 		// Sample data for this light strip
@@ -126,11 +124,9 @@ export namespace ABL
 		// [0, 31]
 		void SetBrightness(std::uint8_t NewBrightness)
 		{
-			// Color headers are composed of a required 3 1 bits followed by 5 brightness bits
-			auto Header = HeaderTopBits | NewBrightness;
 			for (auto& Light : Lights)
 			{
-				Light.SetHeader(Header);
+				Light.SetBrightness(NewBrightness);
 			}
 		}
 
