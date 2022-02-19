@@ -14,11 +14,15 @@ export namespace ABL
 	static constexpr std::size_t GreenChannelIndex = 3;
 
 	static constexpr std::uint8_t HeaderTopBits = 0b11100000;
+	static constexpr std::uint8_t MaxBrightness = 0b00011111; // 31
 
-	struct LightSampleInfo
+	class LightSampleInfo
 	{
 		std::span<uint8_t> BufferSpan;
 
+		std::uint8_t Brightness = MaxBrightness;
+
+	public:
 		std::size_t SampleStartX = 0;
 		std::size_t SampleEndX = 0;
 		std::size_t SampleStartY = 0;
@@ -54,8 +58,14 @@ export namespace ABL
 
 		void SetBrightness(uint8_t NewBrightness)
 		{
+			auto ClampedNewBrightness = std::clamp(NewBrightness, 0Ui8, MaxBrightness);
+			if (ClampedNewBrightness == Brightness)
+				return;
+
+			Brightness = ClampedNewBrightness;
+
 			// Color headers are composed of a required 3 1 bits followed by 5 brightness bits
-			auto Header = HeaderTopBits | NewBrightness;
+			auto Header = HeaderTopBits | Brightness;
 			BufferSpan[HeaderChannelIndex] = Header;
 		}
 

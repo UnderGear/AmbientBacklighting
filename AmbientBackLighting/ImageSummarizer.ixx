@@ -9,7 +9,7 @@ export namespace ABL
 {
 	class RGBSampler
 	{
-		__m256d Value;
+		__m256d Value{ 0 };
 		uint64_t SampleCount = 0;
 
 		//TODO: I hate this bool. do we really need to have this anyway? can you really tell the difference?
@@ -23,6 +23,7 @@ export namespace ABL
 			SampleCount = 0;
 		}
 
+		void SetSampleCount(uint64_t NewSampleCount) { SampleCount = NewSampleCount; }
 		uint64_t GetSampleCount() const { return SampleCount; }
 
 		void AddSample(double R, double G, double B)
@@ -36,8 +37,6 @@ export namespace ABL
 			{
 				Value = _mm256_add_pd(SourceColor, Value);
 			}
-
-			++SampleCount;
 		}
 	
 		__m256d GetColor(__m256d Gammas) const

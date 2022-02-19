@@ -32,12 +32,8 @@ export namespace ABL
 		//  - at least n/2 bits of 0x0s (or 0x1s, just don't mix and match)
 		std::vector<std::uint8_t> Buffer;
 
-		//TODO: we've got this in a couple of places. just read it from config?
-		static constexpr std::uint8_t MaxBrightness = 0b00011111; // 31
-
 		ABL::Config AppConfig;
 		std::vector<ABL::AmbientLightStripSegment> LightStripSegments;
-		std::uint8_t Brightness = MaxBrightness;
 		bool AreLightsEnabled = true;
 
 		// Send our Buffer's current value over the wire to the LED strip
@@ -111,22 +107,18 @@ export namespace ABL
 			Buffer.resize(BufferSize, 0);
 			std::span BufferSpan{ Buffer }; //TODO: is there a cleaner way of initializing the other spans than calling subspan on this?
 
-			// Fill our buffer.
-			// Skip bytes for the start frame. We've zero-filled that in our resize.
-			// Similarly, our end frame is zero-filled as well.
-			std::size_t Index = StartFrameByteCount;
+			// Create light strip segments with screen sampling info and spans into our buffer for their light samples
+			auto Index = StartFrameByteCount;
 			LightStripSegments.reserve(AppConfig.LightSegments.size());
 			for (auto& LightSegmentInfo : AppConfig.LightSegments)
 			{
-				std::size_t StartIndex = Index;
-				std::size_t EndIndex = StartIndex + LightSegmentInfo.LightCount * Config::BytesPerLight;
-				for (; Index < EndIndex; Index += Config::BytesPerLight)
-				{
-					Buffer[Index] = 255;
-				}
+				auto SegmentStartIndex = Index;
+				auto SegmentByteCount = LightSegmentInfo.LightCount * Config::BytesPerLight;
+				Index = SegmentStartIndex + SegmentByteCount;
 
 				// Create a span into the buffer for this light segment
-				std::span SegmentSpan{ BufferSpan.subspan(StartIndex, EndIndex - StartIndex) };
+				std::span SegmentSpan{ BufferSpan.subspan(SegmentStartIndex, Index - SegmentStartIndex) };
+
 				LightStripSegments.emplace_back(Window, LightSegmentInfo, SegmentSpan, ScreenWidth, ScreenHeight, AppConfig.SampleThickness);
 			}
 
@@ -159,15 +151,9 @@ export namespace ABL
 
 		void SetBrightness(std::uint8_t NewBrightness)
 		{
-			auto ClampedNewBrightness = std::clamp(NewBrightness, 0Ui8, MaxBrightness);
-			if (ClampedNewBrightness == Brightness)
-				return;
-
-			Brightness = ClampedNewBrightness;
-
 			for (auto& LightSegment : LightStripSegments)
 			{
-				LightSegment.SetBrightness(Brightness);
+				LightSegment.SetBrightness(NewBrightness);
 			}
 		}
 	};

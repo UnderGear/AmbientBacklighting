@@ -141,6 +141,8 @@ export namespace ABL
 
 		void UpdateLight(const ABL::Config& Config, ABL::LightSampleInfo& Light)
 		{
+			// TODO: let's give the light its own sampler and move this logic into something like Light::Update
+			// TODO: can this use an accumulate instead of this gross double for loop?
 			// TODO: this is a great use case of an mdspan.
 			// add the color of every pixel in our screen sample associated with this light to our image summarizer
 			for (auto x = Light.SampleStartX; x < Light.SampleEndX; ++x)
@@ -153,6 +155,9 @@ export namespace ABL
 					Sampler.AddSample(static_cast<double>(SamplePixel.rgbRed), static_cast<double>(SamplePixel.rgbGreen), static_cast<double>(SamplePixel.rgbBlue));
 				}
 			}
+
+			auto SampleCount = (Light.SampleEndX - Light.SampleStartX) * (Light.SampleEndY - Light.SampleStartY);
+			Sampler.SetSampleCount(SampleCount);
 
 			auto Color = Sampler.GetColor(Config.Gammas);
 			Sampler.ClearSamples();
