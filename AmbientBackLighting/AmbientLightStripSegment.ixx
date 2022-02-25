@@ -6,6 +6,7 @@ import AmbientBackLighting.ScreenSampleInfo;
 import AmbientBackLighting.ImageSummarizer;
 import AmbientBackLighting.Config;
 import AmbientBackLighting.Light;
+import md_span;
 import Profiler;
 import std.core;
 
@@ -13,20 +14,16 @@ export namespace ABL
 {
 	class AmbientLightStripSegment
 	{
-		// Span into our Buffer for writing to the device
-		// The span only exposes the subset of the buffer's bytes this segment should actually be able to access
-		std::span<uint8_t> BufferSpan;
-
 		// Light config data
 		const ABL::LightStripInfo& LightInfo;
 		// Sample data for this light strip
 		ABL::ScreenSampleInfo SampleInfo;
-		ABL::RGBSampler Sampler = {};
 		// Sample data per light in this strip
-		std::vector<ABL::LightSampleInfo> Lights;
+		std::vector<ABL::Light> Lights;
 
 		// Screen sample
 		std::vector<RGBQUAD> ScreenSample;
+		ABL::md_span<RGBQUAD> SampleSpan;
 		BITMAPINFO BitmapInfo;
 
 		HWND& Window;
@@ -36,9 +33,9 @@ export namespace ABL
 
 	public:
 		AmbientLightStripSegment(
-			HWND& InWindow, const ABL::LightStripInfo& InLightInfo, std::span<uint8_t> InBufferSpan,
+			HWND& InWindow, const ABL::LightStripInfo& InLightInfo, std::span<uint8_t> BufferSpan,
 			int ScreenWidth, int ScreenHeight, int SampleThickness)
-			: BufferSpan{ InBufferSpan }, LightInfo{ InLightInfo }, Window{ InWindow }
+			: LightInfo{ InLightInfo }, Window{ InWindow }
 		{
 			const auto IsVertical = LightInfo.Alignment == ABL::LightSampleAlignment::Left || LightInfo.Alignment == ABL::LightSampleAlignment::Right;
 			SampleInfo = ABL::ScreenSampleInfo
@@ -51,28 +48,35 @@ export namespace ABL
 				IsVertical
 			};
 
-			const auto Spacing = static_cast<std::size_t>(SampleInfo.IsVertical
+			ScreenSample.resize(SampleInfo.SampleWidth * SampleInfo.SampleHeight, {});
+			SampleSpan = { ScreenSample.data(), SampleInfo.SampleWidth, SampleInfo.SampleHeight, SampleInfo.SampleWidth, SampleInfo.SampleHeight };
+
+			const auto Spacing = static_cast<int>(SampleInfo.IsVertical
 				? static_cast<float>(SampleInfo.SampleHeight) / static_cast<float>(LightInfo.LightCount)
 				: static_cast<float>(SampleInfo.SampleWidth) / static_cast<float>(LightInfo.LightCount));
 			const auto Padding = (Spacing - SampleThickness) / 2;
 
 			Lights.reserve(LightInfo.LightCount);
-			for (std::size_t LightIndex = 0; LightIndex < LightInfo.LightCount; ++LightIndex)
+			for (auto LightIndex = 0; LightIndex < LightInfo.LightCount; ++LightIndex)
 			{
-				auto BufferStartIndex = LightIndex * Config::BytesPerLight;
-
-				//TODO: I really hate this solution. it should depend on the winding at least
-				//TODO: if we're on the right side, we'll need to inverse our light index vs sample or at least know we need to walk it backwards
 				auto AdjustedLightIndex = LightIndex;
+				//TODO: this is a gross hack that needs to go away.
 				if (LightInfo.Alignment == ABL::LightSampleAlignment::Right)
 				{
 					AdjustedLightIndex = LightInfo.LightCount - LightIndex - 1;
 				}
 
-				Lights.emplace_back(AdjustedLightIndex, BufferSpan.subspan(BufferStartIndex, Config::BytesPerLight), SampleInfo, SampleThickness, Padding);
+				auto BufferStartIndex = AdjustedLightIndex * Config::BytesPerLight;
+
+				auto StartOffset = LightIndex * (SampleThickness + Padding * 2) + Padding;
+
+				auto SampleStartX = SampleInfo.IsVertical ? 0 : StartOffset;
+				auto SampleStartY = SampleInfo.IsVertical ? StartOffset : 0;
+				Lights.emplace_back(BufferSpan.subspan(BufferStartIndex, Config::BytesPerLight)
+					, SampleSpan.subspan(SampleThickness, SampleThickness, SampleStartX, SampleStartY)
+					, SampleThickness * SampleThickness);
 			}
 
-			ScreenSample.resize(SampleInfo.SampleWidth* SampleInfo.SampleHeight, {});
 			BitmapInfo = { 0 };
 			BitmapInfo.bmiHeader.biSize = sizeof(BitmapInfo.bmiHeader);
 			BitmapInfo.bmiHeader.biWidth = SampleInfo.SampleWidth;
@@ -105,19 +109,19 @@ export namespace ABL
 
 		void Update(const ABL::Config& Config)
 		{
-			//Profiler::StackFrameProfile StackFrame = { "AmbientLightStrip::Update", 0 };
+			//Profiler::StackFrameProfile StackFrame = { "AmbientLightStrip::Update" };
 
 			{
 				//take a snip of the screen for this strip
-				//Profiler::StackFrameProfile StackFrame = { "AmbientLightStrip::UpdateScreenSample", 1 };
+				//Profiler::StackFrameProfile StackFrame = { "AmbientLightStrip::UpdateScreenSample" };
 				UpdateScreenSample();
 			}
 
 			//calculate the summarized color for each light
 			for (auto& Light : Lights)
 			{
-				//Profiler::StackFrameProfile StackFrame = { "AmbientLightStrip::UpdateLight", 2 };
-				UpdateLight(Config, Light);
+				//Profiler::StackFrameProfile StackFrame = { "AmbientLightStrip::UpdateLight" };
+				Light.Update(Config);
 			}
 		}
 
@@ -137,35 +141,6 @@ export namespace ABL
 			SelectObject(CaptureDC, CaptureBitmap);
 			BitBlt(CaptureDC, 0, 0, SampleInfo.SampleWidth, SampleInfo.SampleHeight, WindowDC, SampleInfo.SampleOffsetX, SampleInfo.SampleOffsetY, SRCCOPY | CAPTUREBLT);
 			GetDIBits(CaptureDC, CaptureBitmap, 0, SampleInfo.SampleHeight, ScreenSample.data(), &BitmapInfo, DIB_RGB_COLORS);
-		}
-
-		void UpdateLight(const ABL::Config& Config, ABL::LightSampleInfo& Light)
-		{
-			// TODO: let's give the light its own sampler and move this logic into something like Light::Update
-			// TODO: can this use an accumulate instead of this gross double for loop?
-			// TODO: this is a great use case of an mdspan.
-			// add the color of every pixel in our screen sample associated with this light to our image summarizer
-			for (auto x = Light.SampleStartX; x < Light.SampleEndX; ++x)
-			{
-				for (auto y = Light.SampleStartY; y < Light.SampleEndY; ++y)
-				{
-					const auto SampleIndex = x + y * SampleInfo.SampleWidth - 1; // 2D -> 1D array index conversion
-					const auto& SamplePixel = ScreenSample[SampleIndex];
-					//Profiler::StackFrameProfile StackFrame = { "ImageSummarizer::AddSample", 4 };
-					Sampler.AddSample(static_cast<double>(SamplePixel.rgbRed), static_cast<double>(SamplePixel.rgbGreen), static_cast<double>(SamplePixel.rgbBlue));
-				}
-			}
-
-			auto SampleCount = (Light.SampleEndX - Light.SampleStartX) * (Light.SampleEndY - Light.SampleStartY);
-			Sampler.SetSampleCount(SampleCount);
-
-			auto Color = Sampler.GetColor(Config.Gammas);
-			Sampler.ClearSamples();
-
-			{
-				//Profiler::StackFrameProfile StackFrame = { "AmbientLightStrip::UpdateLight - Update Buffer", 6 };
-				Light.SetColor(Color);
-			}
 		}
 	};
 }

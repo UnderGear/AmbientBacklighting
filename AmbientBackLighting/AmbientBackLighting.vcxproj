@@ -205,6 +205,7 @@
     </ClCompile>
     <ClInclude Include="ftd2xx.h" />
     <ClCompile Include="Light.ixx" />
+    <ClCompile Include="md_span.ixx" />
     <ClCompile Include="Profiler.ixx" />
     <ClCompile Include="ScreenSampleInfo.ixx">
       <FileType>Document</FileType>

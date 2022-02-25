@@ -6,6 +6,7 @@ module;
 export module AmbientBackLighting.BackLighting;
 import AmbientBackLighting.Config;
 import AmbientBackLighting.AmbientLightStrip;
+import Profiler;
 import std.core;
 
 export namespace ABL
@@ -39,6 +40,7 @@ export namespace ABL
 		// Send our Buffer's current value over the wire to the LED strip
 		void FlushBuffer()
 		{
+			//Profiler::StackFrameProfile StackFrame{ "AmbientBackLighting::FlushBuffer" };
 			uint32 SentCount = 0;
 			auto Status = SPI_Write(ftHandle, Buffer.data(), static_cast<uint32>(Buffer.size()), &SentCount, SPI_TRANSFER_OPTIONS_SIZE_IN_BYTES);
 		}
@@ -46,6 +48,7 @@ export namespace ABL
 	public:
 		void Update()
 		{
+			//Profiler::StackFrameProfile StackFrame{ "AmbientBackLighting::Update" };
 			AreLightsEnabled = true;
 
 // 			std::for_each(std::execution::par_unseq, LightStripSegments.begin(), LightStripSegments.end(), [&](auto& LightSegment)
@@ -70,10 +73,9 @@ export namespace ABL
 
 			auto Window = GetDesktopWindow();
 
-			constexpr uint8 latency = 1;
 			ChannelConfig channelConf = { 0 };
 			channelConf.ClockRate = FT_BAUD_921600;
-			channelConf.LatencyTimer = latency;
+			channelConf.LatencyTimer = 1;
 			channelConf.configOptions = SPI_CONFIG_OPTION_MODE0 | SPI_CONFIG_OPTION_CS_DBUS3;
 			channelConf.Pin = 0;
 
@@ -100,26 +102,24 @@ export namespace ABL
 
 			auto TotalLightCount = AppConfig.GetTotalLightCount();
 
-			constexpr std::size_t StartFrameByteCount = 4;
+			static constexpr std::size_t StartFrameByteCount = 4;
 			std::size_t EndFrameByteCount = (TotalLightCount + 15Ui64) / 16Ui64;
 
 			auto BufferSize = StartFrameByteCount + TotalLightCount * Config::BytesPerLight + EndFrameByteCount;
 			Buffer.resize(BufferSize, 0);
-			std::span BufferSpan{ Buffer }; //TODO: is there a cleaner way of initializing the other spans than calling subspan on this?
 
 			// Create light strip segments with screen sampling info and spans into our buffer for their light samples
-			auto Index = StartFrameByteCount;
+			auto SegmentBufferIndex = StartFrameByteCount;
 			LightStripSegments.reserve(AppConfig.LightSegments.size());
 			for (auto& LightSegmentInfo : AppConfig.LightSegments)
 			{
-				auto SegmentStartIndex = Index;
 				auto SegmentByteCount = LightSegmentInfo.LightCount * Config::BytesPerLight;
-				Index = SegmentStartIndex + SegmentByteCount;
 
 				// Create a span into the buffer for this light segment
-				std::span SegmentSpan{ BufferSpan.subspan(SegmentStartIndex, Index - SegmentStartIndex) };
+				std::span SegmentSpan{ Buffer.begin() + SegmentBufferIndex, SegmentByteCount};
 
 				LightStripSegments.emplace_back(Window, LightSegmentInfo, SegmentSpan, ScreenWidth, ScreenHeight, AppConfig.SampleThickness);
+				SegmentBufferIndex += SegmentByteCount;
 			}
 
 			SetBrightness(AppConfig.Brightness);

@@ -50,6 +50,9 @@
     <ClCompile Include="Light.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="md_span.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="AmbientBackLighting.rc">

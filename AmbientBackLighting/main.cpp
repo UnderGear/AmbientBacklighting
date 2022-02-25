@@ -43,8 +43,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLi
 
 		//TODO: read from config for our refresh rate again.
 		// 1 count of a duration that is 1/120 seconds long
-		constexpr auto SleepDuration = std::chrono::duration<double, std::ratio<1, 120>>{ 1 };
-		std::this_thread::sleep_for(SleepDuration);
+		//constexpr auto SleepDuration = std::chrono::duration<double, std::ratio<1, 120>>{ 1 };
+		//std::this_thread::sleep_for(SleepDuration);
 
 		MSG Message;
 		while (PeekMessage(&Message, nullptr, 0, 0, PM_NOREMOVE) > 0)

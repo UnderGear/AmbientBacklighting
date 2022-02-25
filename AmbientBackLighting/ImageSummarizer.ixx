@@ -20,11 +20,10 @@ export namespace ABL
 		void ClearSamples()
 		{
 			Value = _mm256_set1_pd(0.0);
-			SampleCount = 0;
 		}
 
-		void SetSampleCount(uint64_t NewSampleCount) { SampleCount = NewSampleCount; }
-		uint64_t GetSampleCount() const { return SampleCount; }
+		constexpr void SetSampleCount(uint64_t NewSampleCount) { SampleCount = NewSampleCount; }
+		constexpr uint64_t GetSampleCount() const { return SampleCount; }
 
 		void AddSample(double R, double G, double B)
 		{

@@ -1,9 +1,13 @@
 module;
 #include "immintrin.h"
 #include "ammintrin.h"
+#include <windows.h>
 
 export module AmbientBackLighting.Light;
 import AmbientBackLighting.ScreenSampleInfo;
+import AmbientBackLighting.ImageSummarizer;
+import AmbientBackLighting.Config;
+import md_span;
 import std.core;
 
 export namespace ABL
@@ -16,30 +20,20 @@ export namespace ABL
 	static constexpr std::uint8_t HeaderTopBits = 0b11100000;
 	static constexpr std::uint8_t MaxBrightness = 0b00011111; // 31
 
-	class LightSampleInfo
+	class Light
 	{
 		std::span<uint8_t> BufferSpan;
+		ABL::md_span<RGBQUAD> SampleSpan;
+
+		ABL::RGBSampler Sampler = {};
 
 		std::uint8_t Brightness = MaxBrightness;
 
 	public:
-		std::size_t SampleStartX = 0;
-		std::size_t SampleEndX = 0;
-		std::size_t SampleStartY = 0;
-		std::size_t SampleEndY = 0;
-
-		//TODO: this would be a great use case for a multi dimensional span.
-		constexpr LightSampleInfo(std::size_t LightIndex, std::span<uint8_t> InBufferSpan, const ABL::ScreenSampleInfo& SampleInfo, std::size_t SampleThickness, std::size_t Padding)
-			: BufferSpan{ InBufferSpan }
+		constexpr Light(std::span<uint8_t> InBufferSpan, ABL::md_span<RGBQUAD> InSampleSpan, int SampleCount)
+			: BufferSpan{ InBufferSpan }, SampleSpan{ InSampleSpan }
 		{
-			// the full spacing taken up per light is: pad, sample, pad. we want N spacings plus another padding to get to our sample at this index
-			auto StartOffset = LightIndex * (SampleThickness + Padding * 2) + Padding;
-			auto EndOffset = StartOffset + SampleThickness;
-
-			SampleStartX = SampleInfo.IsVertical ? 0 : StartOffset;
-			SampleEndX = SampleInfo.IsVertical ? SampleInfo.SampleWidth : EndOffset;
-			SampleStartY = SampleInfo.IsVertical ? StartOffset : 0;
-			SampleEndY = SampleInfo.IsVertical ? EndOffset : SampleInfo.SampleHeight;
+			Sampler.SetSampleCount(SampleCount);
 		}
 
 		void ClearBuffer()
@@ -67,6 +61,24 @@ export namespace ABL
 			// Color headers are composed of a required 3 1 bits followed by 5 brightness bits
 			auto Header = HeaderTopBits | Brightness;
 			BufferSpan[HeaderChannelIndex] = Header;
+		}
+
+		void Update(const ABL::Config& Config)
+		{
+			// TODO: can this use an accumulate instead of this for loop? kill off the sampler entirely?
+			// add the color of every pixel in our screen sample associated with this light to our image summarizer
+			for (auto& SamplePixel : SampleSpan)
+			{
+				Sampler.AddSample(static_cast<double>(SamplePixel.rgbRed), static_cast<double>(SamplePixel.rgbGreen), static_cast<double>(SamplePixel.rgbBlue));
+			}
+
+			auto Color = Sampler.GetColor(Config.Gammas);
+			Sampler.ClearSamples();
+
+			{
+				//Profiler::StackFrameProfile StackFrame = { "AmbientLightStrip::UpdateLight - Update Buffer", 6 };
+				SetColor(Color);
+			}
 		}
 
 	};
