@@ -19,3 +19,7 @@ Release/*
 *.module.json
 *.cpp.json
 *.ixx.ifc.dt*
+*.ilk
+
+Debug
+Release

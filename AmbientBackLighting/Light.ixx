@@ -12,29 +12,27 @@ import std.core;
 
 export namespace ABL
 {
-	static constexpr std::size_t HeaderChannelIndex = 0;
-	static constexpr std::size_t BlueChannelIndex = 1;
-	static constexpr std::size_t RedChannelIndex = 2;
-	static constexpr std::size_t GreenChannelIndex = 3;
+	extern constexpr std::size_t HeaderChannelIndex = 0Ui64;
+	extern constexpr std::size_t BlueChannelIndex = 1Ui64;
+	extern constexpr std::size_t RedChannelIndex = 2Ui64;
+	extern constexpr std::size_t GreenChannelIndex = 3Ui64;
 
-	static constexpr std::uint8_t HeaderTopBits = 0b11100000;
-	static constexpr std::uint8_t MaxBrightness = 0b00011111; // 31
+	extern constexpr std::uint8_t HeaderTopBits = 0b11100000Ui8;
+	extern constexpr std::uint8_t MaxBrightness = 0b00011111Ui8; // 31
 
 	class Light
 	{
 		std::span<uint8_t> BufferSpan;
 		ABL::md_span<RGBQUAD> SampleSpan;
 
-		ABL::RGBSampler Sampler = {};
+		ABL::RGBSampler Sampler;
 
 		std::uint8_t Brightness = MaxBrightness;
 
 	public:
 		constexpr Light(std::span<uint8_t> InBufferSpan, ABL::md_span<RGBQUAD> InSampleSpan, int SampleCount)
-			: BufferSpan{ InBufferSpan }, SampleSpan{ InSampleSpan }
-		{
-			Sampler.SetSampleCount(SampleCount);
-		}
+			: BufferSpan{ InBufferSpan }, SampleSpan{ InSampleSpan }, Sampler{ SampleCount }
+		{ }
 
 		void ClearBuffer()
 		{

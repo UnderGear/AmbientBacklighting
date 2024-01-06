@@ -10,20 +10,19 @@ export namespace ABL
 	class RGBSampler
 	{
 		__m256d Value{ 0 };
-		uint64_t SampleCount = 0;
+		int SampleCount;
 
 		//TODO: I hate this bool. do we really need to have this anyway? can you really tell the difference?
 		bool UseRootMeanSquare = true;
 
 	public:
 
+		constexpr RGBSampler(int InSampleCount) : SampleCount{ InSampleCount } { }
+
 		void ClearSamples()
 		{
-			Value = _mm256_set1_pd(0.0);
+			Value = _mm256_setzero_pd();
 		}
-
-		constexpr void SetSampleCount(uint64_t NewSampleCount) { SampleCount = NewSampleCount; }
-		constexpr uint64_t GetSampleCount() const { return SampleCount; }
 
 		void AddSample(double R, double G, double B)
 		{

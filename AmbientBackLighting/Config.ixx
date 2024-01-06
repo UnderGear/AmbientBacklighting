@@ -50,6 +50,7 @@ export namespace ABL
 		}
 
 		int SampleThickness = 25; //width in pixels of our rectangular samples
+		//TODO: we should be careful with this - this is the DESIRED sample thickness. we should choose min of this and max allowed based on screen dimensions
 
 		//old gamma values from main game playthrough: (G: 2.4, R: 1.9, B: 3.4)
 		//initial B&W playthrough gamma values: (G: 1.9, R: 1.5, B: 2.7)

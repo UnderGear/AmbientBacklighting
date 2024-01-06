@@ -14,8 +14,6 @@ export namespace ABL
 {
 	class AmbientLightStripSegment
 	{
-		// Light config data
-		const ABL::LightStripInfo& LightInfo;
 		// Sample data for this light strip
 		ABL::ScreenSampleInfo SampleInfo;
 		// Sample data per light in this strip
@@ -33,9 +31,9 @@ export namespace ABL
 
 	public:
 		AmbientLightStripSegment(
-			HWND& InWindow, const ABL::LightStripInfo& InLightInfo, std::span<uint8_t> BufferSpan,
+			HWND& InWindow, const ABL::LightStripInfo& LightInfo, std::span<uint8_t> BufferSpan,
 			int ScreenWidth, int ScreenHeight, int SampleThickness)
-			: LightInfo{ InLightInfo }, Window{ InWindow }
+			: Window{ InWindow }
 		{
 			const auto IsVertical = LightInfo.Alignment == ABL::LightSampleAlignment::Left || LightInfo.Alignment == ABL::LightSampleAlignment::Right;
 			SampleInfo = ABL::ScreenSampleInfo
@@ -51,10 +49,10 @@ export namespace ABL
 			ScreenSample.resize(SampleInfo.SampleWidth * SampleInfo.SampleHeight, {});
 			SampleSpan = { ScreenSample.data(), SampleInfo.SampleWidth, SampleInfo.SampleHeight, SampleInfo.SampleWidth, SampleInfo.SampleHeight };
 
-			const auto Spacing = static_cast<int>(SampleInfo.IsVertical
+			auto Spacing = static_cast<int>(SampleInfo.IsVertical
 				? static_cast<float>(SampleInfo.SampleHeight) / static_cast<float>(LightInfo.LightCount)
 				: static_cast<float>(SampleInfo.SampleWidth) / static_cast<float>(LightInfo.LightCount));
-			const auto Padding = (Spacing - SampleThickness) / 2;
+			auto Padding = (Spacing - SampleThickness) / 2;
 
 			Lights.reserve(LightInfo.LightCount);
 			for (auto LightIndex = 0; LightIndex < LightInfo.LightCount; ++LightIndex)
@@ -92,8 +90,6 @@ export namespace ABL
 
 		~AmbientLightStripSegment()
 		{
-			ClearBuffer();
-
 			ReleaseDC(Window, WindowDC);
 			DeleteDC(CaptureDC);
 			DeleteObject(CaptureBitmap);
