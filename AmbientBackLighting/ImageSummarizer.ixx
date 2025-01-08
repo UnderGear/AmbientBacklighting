@@ -3,7 +3,7 @@ module;
 #include "ammintrin.h"
 
 export module AmbientBackLighting.ImageSummarizer;
-import std.core;
+import std;
 
 export namespace ABL
 {

@@ -2,7 +2,7 @@ export module md_span;
 
 export namespace ABL
 {
-	//TODO: move md_span somewhere else
+	//TODO: replace with c++23 mdspan
 	template<typename DataType>
 	struct md_span
 	{

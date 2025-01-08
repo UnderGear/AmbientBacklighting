@@ -8,7 +8,7 @@ import AmbientBackLighting.Config;
 import AmbientBackLighting.Light;
 import md_span;
 import Profiler;
-import std.core;
+import std;
 
 export namespace ABL
 {
@@ -31,7 +31,7 @@ export namespace ABL
 
 	public:
 		AmbientLightStripSegment(
-			HWND& InWindow, const ABL::LightStripInfo& LightInfo, std::span<uint8_t> BufferSpan,
+			HWND& InWindow, const ABL::LightStripInfo& LightInfo, std::span<std::uint8_t> BufferSpan,
 			int ScreenWidth, int ScreenHeight, int SampleThickness)
 			: Window{ InWindow }
 		{

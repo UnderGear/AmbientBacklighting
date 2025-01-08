@@ -7,7 +7,7 @@ export module AmbientBackLighting.BackLighting;
 import AmbientBackLighting.Config;
 import AmbientBackLighting.AmbientLightStrip;
 import Profiler;
-import std.core;
+import std;
 
 export namespace ABL
 {

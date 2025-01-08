@@ -8,7 +8,7 @@ import AmbientBackLighting.ScreenSampleInfo;
 import AmbientBackLighting.ImageSummarizer;
 import AmbientBackLighting.Config;
 import md_span;
-import std.core;
+import std;
 
 export namespace ABL
 {

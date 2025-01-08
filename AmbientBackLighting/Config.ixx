@@ -2,7 +2,7 @@ module;
 #include "immintrin.h"
 
 export module AmbientBackLighting.Config;
-import std.core;
+import std;
 
 export namespace ABL
 {

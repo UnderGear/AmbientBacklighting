@@ -1,5 +1,4 @@
 export module AmbientBackLighting.ScreenSampleInfo;
-import std.core;
 
 export namespace ABL
 {

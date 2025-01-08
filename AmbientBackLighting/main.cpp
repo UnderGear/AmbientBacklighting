@@ -3,13 +3,14 @@
 #include <windows.h>
 #include <shellapi.h>
 
-import std.core;
+import std;
 import AmbientBackLighting.BackLighting;
 import Profiler;
 import "resource.h";
 
 constexpr UINT TrayMessage = WM_APP;
-constexpr UINT ExitMessage = TrayMessage + 1;
+constexpr UINT ToggleMessage = TrayMessage + 1;
+constexpr UINT ExitMessage = TrayMessage + 2;
 
 //Disgusting global state so the winproc can actually work
 //TODO: I'm considering pulling the windows crap into its own class that holds a unique ptr to a backlighting
@@ -17,7 +18,8 @@ constexpr UINT ExitMessage = TrayMessage + 1;
 NOTIFYICONDATA NotifyData = { sizeof(NotifyData) };
 auto IsScreenOn = true;
 auto IsRunning = true;
-ABL::AmbientBackLighting* BackLighting = new ABL::AmbientBackLighting{};
+auto IsActive = true;
+ABL::AmbientBackLighting* BackLighting = new ABL::AmbientBackLighting;
 
 void InitializeWindow(HINSTANCE hInstance);
 void ShowContextMenu(HWND hWnd);
@@ -30,7 +32,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLi
 	//Profiler::FrameProfiler Profiler;
 	while (BackLighting != nullptr && IsRunning)
 	{
-		if (IsScreenOn)
+		if (IsScreenOn && IsActive)
 		{
 			BackLighting->Update();
 			//Profiler.Print();
@@ -100,6 +102,7 @@ void ShowContextMenu(HWND hWnd)
 	HMENU hMenu = CreatePopupMenu();
 	if (hMenu)
 	{
+		InsertMenu(hMenu, -1, MF_BYPOSITION, ToggleMessage, L"&Toggle");
 		InsertMenu(hMenu, -1, MF_BYPOSITION, ExitMessage, L"E&xit");
 
 		// set window to the foreground or the menu won't disappear when it should
@@ -131,6 +134,9 @@ INT_PTR CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case ExitMessage:
 			DestroyWindow(hWnd);
+			break;
+		case ToggleMessage:
+			IsActive = !IsActive;
 			break;
 		}
 		return 1;
@@ -164,6 +170,8 @@ INT_PTR CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case PBT_POWERSETTINGCHANGE:
 		{
+			//TODO: support more power settings?
+			//TODO: wake up doesn't seem to be working correctly
 			auto* PowerSetting = reinterpret_cast<POWERBROADCAST_SETTING*>(lParam);
 			if (PowerSetting->PowerSetting == GUID_CONSOLE_DISPLAY_STATE)
 			{
@@ -175,6 +183,11 @@ INT_PTR CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		
 		break;
 	}
+	case WM_DISPLAYCHANGE:
+		auto Horizontal = LOWORD(lParam);
+		auto Vertical = HIWORD(lParam);
+		IsScreenOn = Horizontal > 0 && Vertical > 0;
+		break;
 	}
 	return 0;
 }

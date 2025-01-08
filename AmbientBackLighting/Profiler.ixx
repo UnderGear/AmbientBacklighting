@@ -1,22 +1,19 @@
 export module Profiler;
 
-import std.core;
+import std;
 
 namespace Profiler
 {
 	struct StackFrameResults
 	{
-		uint32_t CallCount = 0;
+		std::uint32_t CallCount = 0;
 		std::chrono::duration<double> TotalDuration = {};
 		std::string_view ProfileName;
 
 		void Print() const
 		{
-			static constexpr auto FormatText = "Profile: {}, CallCount: {}, Total Duration {}";
-
 			//TODO: we should configure some options on where we write these logs. standard out, VS output window, file?
-
-			std::puts(std::format(FormatText, ProfileName, CallCount, TotalDuration).c_str());
+			std::println("Profile: {}, CallCount: {}, Total Duration {}", ProfileName, CallCount, TotalDuration);
 		}
 
 		void Reset()
@@ -39,10 +36,8 @@ namespace Profiler
 
 		void Print() const
 		{
-			static constexpr auto FormatText = "Profile: {}, Total Duration {}";
-
 			//TODO: we should configure some options on where we write these logs. standard out, VS output window, file?
-			std::puts(std::format(FormatText, ProfileName, EndTime - StartTime).c_str());
+			std::println("Profile: {}, Total Duration {}", ProfileName, EndTime - StartTime);
 		}
 	};
 
