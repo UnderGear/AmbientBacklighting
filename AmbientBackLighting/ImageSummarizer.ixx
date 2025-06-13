@@ -29,7 +29,7 @@ export namespace ABL
 			__m256d SourceColor = _mm256_set_pd(R, G, B, 0.0);
 			if (UseRootMeanSquare)
 			{
-				Value = _mm256_macc_pd(SourceColor, SourceColor, Value);
+				Value = _mm256_fmadd_pd(SourceColor, SourceColor, Value);
 			}
 			else
 			{
@@ -61,7 +61,7 @@ export namespace ABL
 
 			//corrected value is (Index/255)^Gamma * Max + 0.5
 			auto CorrectedValues = _mm256_pow_pd(_mm256_div_pd(RawValues, Maxes), Gammas);
-			CorrectedValues = _mm256_macc_pd(CorrectedValues, Maxes, Halves);
+			CorrectedValues = _mm256_fmadd_pd(CorrectedValues, Maxes, Halves);
 
 			return CorrectedValues;
 		}

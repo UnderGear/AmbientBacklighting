@@ -102,8 +102,15 @@ void ShowContextMenu(HWND hWnd)
 	HMENU hMenu = CreatePopupMenu();
 	if (hMenu)
 	{
-		InsertMenu(hMenu, -1, MF_BYPOSITION, ToggleMessage, L"&Toggle");
-		InsertMenu(hMenu, -1, MF_BYPOSITION, ExitMessage, L"E&xit");
+		if (IsActive)
+		{
+			InsertMenu(hMenu, -1, MF_BYPOSITION, ToggleMessage, L"Disable");
+		}
+		else
+		{
+			InsertMenu(hMenu, -1, MF_BYPOSITION, ToggleMessage, L"Enable");
+		}
+		InsertMenu(hMenu, -1, MF_BYPOSITION, ExitMessage, L"Exit");
 
 		// set window to the foreground or the menu won't disappear when it should
 		SetForegroundWindow(hWnd);
@@ -179,15 +186,17 @@ INT_PTR CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				return 1;
 			}
 		}
-		}		
-		
+		}
+
 		break;
 	}
 	case WM_DISPLAYCHANGE:
+	{
 		auto Horizontal = LOWORD(lParam);
 		auto Vertical = HIWORD(lParam);
 		IsScreenOn = Horizontal > 0 && Vertical > 0;
 		break;
+	}
 	}
 	return 0;
 }
